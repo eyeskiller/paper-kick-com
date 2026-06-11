@@ -16,13 +16,15 @@ public class BridgeWebSocketClient extends WebSocketClient {
     private final KickIntegrationPlugin plugin;
     private final String secret;
     private final String streamer;
+    private final int chatroomId;
     private final Gson gson = new Gson();
 
-    public BridgeWebSocketClient(KickIntegrationPlugin plugin, URI serverUri, String secret, String streamer) {
+    public BridgeWebSocketClient(KickIntegrationPlugin plugin, URI serverUri, String secret, String streamer, int chatroomId) {
         super(serverUri);
         this.plugin = plugin;
         this.secret = secret;
         this.streamer = streamer;
+        this.chatroomId = chatroomId;
     }
 
     @Override
@@ -32,6 +34,7 @@ public class BridgeWebSocketClient extends WebSocketClient {
         authMsg.addProperty("type", "auth");
         authMsg.addProperty("secret", secret);
         authMsg.addProperty("streamer", streamer);
+        authMsg.addProperty("chatroomId", chatroomId);
         send(gson.toJson(authMsg));
     }
 

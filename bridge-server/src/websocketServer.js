@@ -23,11 +23,12 @@ function setupWebSocket(server) {
             clients.set(ws, {
               ip: ip,
               streamer: data.streamer.toLowerCase(),
+              chatroomId: data.chatroomId,
               connectedAt: new Date().toISOString()
             });
-            console.log(`[WS] Client authenticated for streamer: ${data.streamer}`);
+            console.log(`[WS] Client authenticated for streamer: ${data.streamer} with chatroomId: ${data.chatroomId}`);
             ws.send(JSON.stringify({ type: 'auth_success' }));
-            if (clientAuthHandler) clientAuthHandler(data.streamer.toLowerCase());
+            if (clientAuthHandler) clientAuthHandler(data.streamer.toLowerCase(), data.chatroomId);
           } else {
             console.log(`[WS] Authentication failed`);
             ws.close(1008, 'Unauthorized');

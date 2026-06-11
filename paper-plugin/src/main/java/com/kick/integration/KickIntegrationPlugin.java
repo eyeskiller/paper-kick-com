@@ -19,9 +19,10 @@ public class KickIntegrationPlugin extends JavaPlugin {
         String wsUrl = getConfig().getString("bridge.url", "ws://127.0.0.1:8811");
         String wsSecret = getConfig().getString("bridge.secret", "change_me_in_production");
         String streamer = getConfig().getString("streamer-kick-username", "Eysekiller");
+        int chatroomId = getConfig().getInt("streamer-chatroom-id", 0);
 
         try {
-            webSocketClient = new BridgeWebSocketClient(this, new URI(wsUrl), wsSecret, streamer);
+            webSocketClient = new BridgeWebSocketClient(this, new URI(wsUrl), wsSecret, streamer, chatroomId);
             webSocketClient.connect();
         } catch (URISyntaxException e) {
             getLogger().severe("Invalid WebSocket URL in config!");

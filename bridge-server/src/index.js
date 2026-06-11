@@ -115,20 +115,12 @@ app.get('/api/kick/callback', async (req, res) => {
 const pusher = new Pusher('eb1d5f283081a78b932c', { cluster: 'us2' });
 const subscribedChannels = new Set();
 
-wsManager.onClientAuth(async (streamerSlug) => {
+wsManager.onClientAuth(async (streamerSlug, chatroomId) => {
   if (subscribedChannels.has(streamerSlug)) return;
   subscribedChannels.add(streamerSlug);
 
   try {
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://kick.com/api/v1/channels/${streamerSlug}`)}`;
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error('Failed to fetch from proxy');
-    
-    const proxyData = await res.json();
-    if (!proxyData.contents) throw new Error('Channel not found on Kick API');
-    
-    const data = JSON.parse(proxyData.contents);
-    const chatroomId = data.chatroom.id;
+    if (!chatroomId) throw new Error('No chatroomId provided by Minecraft server');
     
     console.log(`[Pusher] Subscribing to chatroom ${chatroomId} for streamer ${streamerSlug}`);
     const channel = pusher.subscribe(`chatrooms.${chatroomId}.v2`);
