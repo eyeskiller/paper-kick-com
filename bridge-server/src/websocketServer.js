@@ -17,10 +17,11 @@ function setupWebSocket(server) {
         const data = JSON.parse(message);
         
         if (!authenticated) {
-          if (data.type === 'auth' && data.secret === process.env.WS_SECRET) {
+          if (data.type === 'auth' && data.secret === process.env.WS_SECRET && data.streamer) {
             authenticated = true;
             clients.set(ws, {
               ip: ip,
+              streamer: data.streamer.toLowerCase(),
               connectedAt: new Date().toISOString()
             });
             console.log(`[WS] Client authenticated`);
@@ -50,13 +51,19 @@ function setupWebSocket(server) {
   });
 
   return {
-    broadcast(event) {
+    routeToStreamer(streamerUsername, event) {
+      if (!streamerUsername) return;
+      const target = streamerUsername.toLowerCase();
       const message = JSON.stringify(event);
+      
+      let sent = 0;
       for (const [client, meta] of clients.entries()) {
-        if (client.readyState === WebSocket.OPEN) {
+        if (meta.streamer === target && client.readyState === WebSocket.OPEN) {
           client.send(message);
+          sent++;
         }
       }
+      console.log(`[WS] Routed event '${event.type}' to ${sent} servers for streamer '${target}'`);
     },
     setClaimCodeHandler(handler) {
       claimCodeHandler = handler;

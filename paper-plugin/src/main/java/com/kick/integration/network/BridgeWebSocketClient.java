@@ -15,20 +15,23 @@ public class BridgeWebSocketClient extends WebSocketClient {
 
     private final KickIntegrationPlugin plugin;
     private final String secret;
+    private final String streamer;
     private final Gson gson = new Gson();
 
-    public BridgeWebSocketClient(KickIntegrationPlugin plugin, URI serverUri, String secret) {
+    public BridgeWebSocketClient(KickIntegrationPlugin plugin, URI serverUri, String secret, String streamer) {
         super(serverUri);
         this.plugin = plugin;
         this.secret = secret;
+        this.streamer = streamer;
     }
 
     @Override
     public void onOpen(ServerHandshake handshakedata) {
-        plugin.getLogger().info("Connected to Bridge Server. Authenticating...");
+        plugin.getLogger().info("Connected to Bridge Server. Authenticating as " + streamer + "...");
         JsonObject authMsg = new JsonObject();
         authMsg.addProperty("type", "auth");
         authMsg.addProperty("secret", secret);
+        authMsg.addProperty("streamer", streamer);
         send(gson.toJson(authMsg));
     }
 

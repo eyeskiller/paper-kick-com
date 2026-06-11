@@ -87,8 +87,10 @@ app.post('/api/webhooks/kick', async (req, res) => {
       const messageText = event.data.message;
       const sender = event.data.sender.username;
 
+      const streamerTarget = event.streamer?.slug || event.data?.channel?.slug || event.data?.streamer?.slug;
+      
       const claimMatch = messageText.match(/KICK-[A-Z0-9]{4}/) || messageText.match(/^[A-Z0-9]{6}$/);
-      if (claimMatch) {
+      if (claimMatch && streamerTarget) {
         const code = claimMatch[0];
         const claim = await prisma.claimCode.findUnique({ where: { code } });
         
@@ -106,7 +108,7 @@ app.post('/api/webhooks/kick', async (req, res) => {
 
           await prisma.claimCode.delete({ where: { code } });
 
-          wsManager.broadcast({
+          wsManager.routeToStreamer(streamerTarget, {
             type: 'claim_success',
             minecraftUuid: claim.minecraftUuid,
             kickUsername: sender
@@ -114,11 +116,16 @@ app.post('/api/webhooks/kick', async (req, res) => {
         }
       }
     } else if (event.type === 'channel.subscription.new' || event.type === 'kicks.gifted') {
-      wsManager.broadcast({
-        type: 'subscription_event',
-        subType: event.type,
-        data: event.data
-      });
+      const streamerTarget = event.streamer?.slug || event.data?.channel?.slug || event.data?.streamer?.slug;
+      if (streamerTarget) {
+        wsManager.routeToStreamer(streamerTarget, {
+          type: 'subscription_event',
+          subType: event.type,
+          data: event.data
+        });
+      } else {
+        console.warn('[Webhook] Missing streamer target in subscription event payload!');
+      }
     }
 
     res.status(200).send('OK');

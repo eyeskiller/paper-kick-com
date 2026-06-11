@@ -3,4 +3,5 @@ bridge:
   secret: "change_me_in_production"
   api-url: "https://kick.bechatbot.online/api/kick"
 
+streamer-kick-username: "Eysekiller"
 streamer-uuid: "00000000-0000-0000-0000-000000000000"

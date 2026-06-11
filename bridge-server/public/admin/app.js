@@ -91,12 +91,13 @@ async function fetchStats() {
         
         serversBody.innerHTML = '';
         if (data.activeConnections.length === 0) {
-            serversBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color: #8b92a5">No servers connected</td></tr>`;
+            serversBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: #8b92a5">No servers connected</td></tr>`;
         } else {
             data.activeConnections.forEach(conn => {
                 const date = new Date(conn.connectedAt).toLocaleString();
                 serversBody.innerHTML += `
                     <tr>
+                        <td style="color: var(--kick-green); font-weight: 600;">${conn.streamer || 'Unknown'}</td>
                         <td>${conn.ip}</td>
                         <td>${date}</td>
                         <td><span class="status-badge">Online</span></td>
