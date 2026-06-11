@@ -14,7 +14,13 @@ module.exports = function(prisma, requireAuth, wsManager) {
           }
         }
       });
-      res.json(servers);
+      
+      const enrichedServers = servers.map(s => ({
+        ...s,
+        isConnected: wsManager.isServerConnected(s.id)
+      }));
+      
+      res.json(enrichedServers);
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Internal Server Error' });

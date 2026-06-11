@@ -81,6 +81,12 @@ function setupWebSocket(server, prisma) {
     },
     getActiveConnections() {
       return Array.from(clients.values());
+    },
+    isServerConnected(targetServerId) {
+      for (const meta of clients.values()) {
+        if (meta.serverId === targetServerId) return true;
+      }
+      return false;
     }
   };
 }

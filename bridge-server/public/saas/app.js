@@ -65,14 +65,21 @@ async function loadServers() {
       card.className = 'glass-panel server-card';
       
       const isLinked = server.kickChannel ? true : false;
-      const statusBadge = isLinked 
-        ? `<span class="status-badge" style="background: rgba(16,185,129,0.2); color: #10b981;">Linked to @${server.kickChannel}</span>`
-        : `<span class="status-badge" style="background: rgba(239,68,68,0.2); color: #ef4444;">Not Linked</span>`;
+      const linkBadge = isLinked 
+        ? `<span class="status-badge" style="background: rgba(16,185,129,0.2); color: #10b981;">Kick: @${server.kickChannel}</span>`
+        : `<span class="status-badge" style="background: rgba(239,68,68,0.2); color: #ef4444;">Kick: Unlinked</span>`;
+
+      const wsBadge = server.isConnected
+        ? `<span class="status-badge" style="background: rgba(59,130,246,0.2); color: #3b82f6;">🟢 Online</span>`
+        : `<span class="status-badge" style="background: rgba(148,163,184,0.2); color: #94a3b8;">🔴 Offline</span>`;
 
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <h3>${server.name}</h3>
-          ${statusBadge}
+          <div style="display: flex; gap: 0.5rem; flex-direction: column; align-items: flex-end;">
+            ${wsBadge}
+            ${linkBadge}
+          </div>
         </div>
         
         <div>
