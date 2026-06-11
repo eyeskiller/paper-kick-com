@@ -21,7 +21,7 @@ public class KickCommandExecutor implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§cUsage: /kick <claim|unlink|status|reload>");
+            sender.sendMessage("§cUsage: /kick <claim|events|unlink|status|reload>");
             return true;
         }
 
@@ -52,6 +52,20 @@ public class KickCommandExecutor implements CommandExecutor {
                     sender.sendMessage("§cBridge server is currently unavailable. Please try again later.");
                 }
                 break;
+            case "events":
+                if (!sender.hasPermission("kick.admin")) {
+                    sender.sendMessage("§cNo permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage("§cUsage: /kick events <on|off>");
+                    return true;
+                }
+                boolean enable = args[1].equalsIgnoreCase("on");
+                plugin.getConfig().set("events-enabled", enable);
+                plugin.saveConfig();
+                sender.sendMessage(enable ? "§aKick events (mobs, drops) are now ENABLED." : "§cKick events are now DISABLED.");
+                break;
             case "reload":
                 if (!sender.hasPermission("kick.admin")) {
                     sender.sendMessage("§cNo permission.");
@@ -65,7 +79,7 @@ public class KickCommandExecutor implements CommandExecutor {
                 sender.sendMessage("§e" + args[0] + " command is a work in progress.");
                 break;
             default:
-                sender.sendMessage("§cUsage: /kick <claim|unlink|status|reload>");
+                sender.sendMessage("§cUsage: /kick <claim|events|unlink|status|reload>");
                 break;
         }
         return true;

@@ -23,6 +23,11 @@ public class ActionHandler {
     }
 
     public static void handleSubscriptionEvent(KickIntegrationPlugin plugin, JsonObject data) {
+        if (!plugin.getConfig().getBoolean("events-enabled", true)) {
+            plugin.getLogger().info("Subscription event received but events are disabled in config.");
+            return;
+        }
+
         Player streamer = getStreamerEntity(plugin);
         if (streamer == null || !streamer.isOnline()) {
             plugin.getLogger().info("Streamer is offline. Event ignored.");
