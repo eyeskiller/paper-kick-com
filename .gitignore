@@ -1,0 +1,30 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Bridge Server specific
+bridge-server/.env
+bridge-server/dev.db
+bridge-server/dev.db-journal
+
+# Java / Gradle
+.gradle/
+build/
+out/
+bin/
+*.class
+
+# IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS generated files
+.DS_Store
+Thumbs.db

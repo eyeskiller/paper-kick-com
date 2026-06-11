@@ -1,0 +1,8 @@
+name: KickIntegration
+version: 1.0-SNAPSHOT
+main: com.kick.integration.KickIntegrationPlugin
+api-version: "1.21"
+commands:
+  kick:
+    description: "Manage Kick.com account linking"
+    usage: "/kick <claim|unlink|status|reload>"

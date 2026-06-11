@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model LinkedUser {
+  minecraftUuid  String  @id
+  kickChannelId  String?
+  kickUsername   String
+  accessToken    String?
+  refreshToken   String?
+  role           String  @default("PLAYER") // STREAMER or PLAYER
+  isSubscriber   Boolean @default(false)
+  isActive       Boolean @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ClaimCode {
+  code          String   @id
+  minecraftUuid String
+  kickUsername  String
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+}
