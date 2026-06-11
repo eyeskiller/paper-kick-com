@@ -104,7 +104,7 @@ module.exports = function(prisma, requireAuth, wsManager) {
 
       const newStatus = !user.isSubscriber;
       await prisma.linkedUser.update({
-        where: { id: user.id },
+        where: { minecraftUuid: user.minecraftUuid },
         data: { isSubscriber: newStatus }
       });
 
