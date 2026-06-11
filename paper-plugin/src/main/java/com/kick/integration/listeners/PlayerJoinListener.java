@@ -52,10 +52,10 @@ public class PlayerJoinListener implements Listener {
                             plugin.setUserSubscribed(player.getUniqueId(), isSub);
 
                             if (isSub) {
-                                player.setPlayerListName("§d[KICK SUB] §r" + player.getName());
+                                player.playerListName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize("§d[KICK SUB] §r" + player.getName()));
                                 plugin.getLogger().info("Applied KICK SUB prefix to " + player.getName());
                             } else {
-                                player.setPlayerListName("§a[KICK] §r" + player.getName());
+                                player.playerListName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize("§a[KICK] §r" + player.getName()));
                                 plugin.getLogger().info("Applied KICK prefix to " + player.getName());
                             }
                         }, 20L); // 1 second delay

@@ -57,9 +57,9 @@ public class BridgeWebSocketClient extends WebSocketClient {
                             plugin.setUserSubscribed(p.getUniqueId(), isSub);
 
                             if (isSub) {
-                                p.setPlayerListName("§d[KICK SUB] §r" + p.getName());
+                                p.playerListName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize("§d[KICK SUB] §r" + p.getName()));
                             } else {
-                                p.setPlayerListName("§a[KICK] §r" + p.getName());
+                                p.playerListName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize("§a[KICK] §r" + p.getName()));
                             }
                             p.sendMessage("§aYou have successfully linked your Kick account (" + kickUsername + ")!");
                         }
@@ -72,9 +72,9 @@ public class BridgeWebSocketClient extends WebSocketClient {
                             plugin.setUserSubscribed(target.getUniqueId(), isTargetSub);
                             
                             if (isTargetSub) {
-                                target.setPlayerListName("§d[KICK SUB] §r" + target.getName());
+                                target.playerListName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize("§d[KICK SUB] §r" + target.getName()));
                             } else {
-                                target.setPlayerListName("§a[KICK] §r" + target.getName());
+                                target.playerListName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize("§a[KICK] §r" + target.getName()));
                             }
                         }
                         break;
