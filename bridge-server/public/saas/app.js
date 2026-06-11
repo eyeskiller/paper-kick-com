@@ -247,12 +247,29 @@ async function viewPlayers(serverId, serverName) {
         <tr>
           <td class="fw-medium">${u.kickUsername}</td>
           <td class="font-monospace small text-muted">${u.minecraftUuid}</td>
-          <td>${subBadge}</td>
+          <td>
+            ${subBadge}
+            <button class="btn btn-sm btn-outline-primary ms-2" style="padding: 0.1rem 0.4rem; font-size: 0.75rem;" onclick="togglePlayerSub('${serverId}', '${u.minecraftUuid}', '${serverName}')">Toggle</button>
+          </td>
         </tr>
       `;
     });
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger">${err.message}</td></tr>`;
+  }
+}
+
+async function togglePlayerSub(serverId, uuid, serverName) {
+  try {
+    const res = await fetch(`/api/dashboard/servers/${serverId}/users/${uuid}/toggle-sub`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error('Failed to toggle subscription status');
+    
+    // Refresh the modal
+    viewPlayers(serverId, serverName);
+  } catch (err) {
+    alert(err.message);
   }
 }
 

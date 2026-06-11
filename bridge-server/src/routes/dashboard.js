@@ -89,6 +89,38 @@ module.exports = function(prisma, requireAuth, wsManager) {
     }
   });
 
+  // Toggle sub status manually
+  router.post('/servers/:id/users/:uuid/toggle-sub', requireAuth, async (req, res) => {
+    try {
+      const server = await prisma.server.findFirst({
+        where: { id: req.params.id, customerId: req.user.id }
+      });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
+
+      const user = await prisma.linkedUser.findFirst({
+        where: { minecraftUuid: req.params.uuid, serverId: server.id }
+      });
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const newStatus = !user.isSubscriber;
+      await prisma.linkedUser.update({
+        where: { id: user.id },
+        data: { isSubscriber: newStatus }
+      });
+
+      wsManager.routeToServer(server.id, {
+        type: 'subscription_update',
+        minecraftUuid: user.minecraftUuid,
+        isSubscriber: newStatus
+      });
+
+      res.json({ success: true, isSubscriber: newStatus });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
   router.delete('/servers/:id', requireAuth, async (req, res) => {
     try {
       const server = await prisma.server.findFirst({
