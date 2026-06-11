@@ -13,7 +13,7 @@ function switchAuthTab(mode) {
   document.getElementById('tab-register').classList.toggle('active', mode === 'register');
   document.getElementById('auth-btn').textContent = mode === 'login' ? 'Login' : 'Register';
   document.getElementById('auth-error').textContent = '';
-  document.getElementById('turnstile-container').style.display = mode === 'register' ? 'block' : 'none';
+  if (window.turnstile) { turnstile.reset(); }
 }
 
 async function handleAuth(e) {
@@ -25,7 +25,7 @@ async function handleAuth(e) {
   const formData = new FormData(e.target);
   const turnstileToken = formData.get('cf-turnstile-response');
 
-  if (currentAuthMode === 'register' && !turnstileToken) {
+  if (!turnstileToken) {
     errorDiv.textContent = 'Please complete the CAPTCHA';
     return;
   }
@@ -51,7 +51,7 @@ async function handleAuth(e) {
     loadServers();
   } catch (err) {
     errorDiv.textContent = err.message;
-    if (currentAuthMode === 'register' && window.turnstile) {
+    if (window.turnstile) {
       turnstile.reset();
     }
   }

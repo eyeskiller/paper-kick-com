@@ -6,28 +6,36 @@ module.exports = function(prisma) {
   const router = express.Router();
   const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_me_in_prod';
 
+  // Helper to verify Turnstile
+  async function verifyTurnstile(token) {
+    if (!token) throw new Error('CAPTCHA token is required');
+    const secretKey = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        secret: secretKey,
+        response: token
+      })
+    });
+    const verifyData = await verifyRes.json();
+    if (!verifyData.success) {
+      console.error('[Turnstile] Verification failed:', verifyData);
+      throw new Error('CAPTCHA verification failed. Please try again.');
+    }
+  }
+
   // Register a new customer
   router.post('/register', async (req, res) => {
     try {
       const { email, password, turnstileToken } = req.body;
       if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-      if (!turnstileToken) return res.status(400).json({ error: 'CAPTCHA token is required' });
 
       // Verify Turnstile token
-      const secretKey = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
-      const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          secret: secretKey,
-          response: turnstileToken
-        })
-      });
-      const verifyData = await verifyRes.json();
-      
-      if (!verifyData.success) {
-        console.error('[Turnstile] Verification failed:', verifyData);
-        return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
+      try {
+        await verifyTurnstile(turnstileToken);
+      } catch (err) {
+        return res.status(400).json({ error: err.message });
       }
 
       const existing = await prisma.customer.findUnique({ where: { email } });
@@ -51,8 +59,15 @@ module.exports = function(prisma) {
   // Login
   router.post('/login', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, turnstileToken } = req.body;
       if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+
+      // Verify Turnstile token
+      try {
+        await verifyTurnstile(turnstileToken);
+      } catch (err) {
+        return res.status(400).json({ error: err.message });
+      }
 
       const customer = await prisma.customer.findUnique({ where: { email } });
       if (!customer) return res.status(401).json({ error: 'Invalid credentials' });
