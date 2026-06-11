@@ -74,66 +74,12 @@ public class KickCommandExecutor implements CommandExecutor {
                 plugin.reloadConfig();
                 sender.sendMessage("§aConfig reloaded.");
                 break;
-            case "testsub":
-                if (!sender.hasPermission("kick.admin")) {
-                    sender.sendMessage("§cNo permission.");
-                    return true;
-                }
-                JsonObject subData = new JsonObject();
-                subData.addProperty("type", "subscription_event");
-                subData.addProperty("subType", "channel.subscription.new");
-                JsonObject subDetails = new JsonObject();
-                subDetails.addProperty("username", sender.getName() + "_TestBot");
-                subData.add("data", subDetails);
-                com.kick.integration.logic.ActionHandler.handleSubscriptionEvent(plugin, subData);
-                sender.sendMessage("§aSimulated a new subscription event!");
-                break;
-            case "testgifts":
-                if (!sender.hasPermission("kick.admin")) {
-                    sender.sendMessage("§cNo permission.");
-                    return true;
-                }
-                int count = 5;
-                if (args.length > 1) {
-                    try {
-                        count = Integer.parseInt(args[1]);
-                    } catch (NumberFormatException ignored) {}
-                }
-                JsonObject giftData = new JsonObject();
-                giftData.addProperty("type", "subscription_event");
-                giftData.addProperty("subType", "channel.subscription.gifts");
-                JsonObject giftDetails = new JsonObject();
-                giftDetails.addProperty("count", count);
-                giftData.add("data", giftDetails);
-                com.kick.integration.logic.ActionHandler.handleSubscriptionEvent(plugin, giftData);
-                sender.sendMessage("§aSimulated " + count + " gifted subs!");
-                break;
-            case "testchat":
-                if (!sender.hasPermission("kick.admin")) {
-                    sender.sendMessage("§cNo permission.");
-                    return true;
-                }
-                if (args.length < 2) {
-                    sender.sendMessage("§cUsage: /kick testchat <message>");
-                    return true;
-                }
-                StringBuilder sb = new StringBuilder();
-                for (int i = 1; i < args.length; i++) {
-                    sb.append(args[i]).append(" ");
-                }
-                JsonObject chatData = new JsonObject();
-                chatData.addProperty("type", "chat_event");
-                chatData.addProperty("sender", "TestUser");
-                chatData.addProperty("content", sb.toString().trim());
-                com.kick.integration.logic.ActionHandler.handleChatEvent(plugin, chatData);
-                sender.sendMessage("§aSimulated chat message: " + sb.toString().trim());
-                break;
             case "status":
             case "unlink":
                 sender.sendMessage("§e" + args[0] + " command is a work in progress.");
                 break;
             default:
-                sender.sendMessage("§cUsage: /kick <claim|events|testsub|testgifts|testchat|unlink|status|reload>");
+                sender.sendMessage("§cUsage: /kick <claim|events|unlink|status|reload>");
                 break;
         }
         return true;

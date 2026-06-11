@@ -153,6 +153,75 @@
     </div>
   </div>
 
+  <!-- ACTIONS MODAL -->
+  <div id="actions-modal" class="modal-overlay" style="display: none;">
+    <div class="glass-panel modal" style="max-width: 800px; width: 100%;">
+      <h2 id="actions-modal-title">Event Actions</h2>
+
+      <div style="display: flex; gap: 2rem;">
+        <div style="flex: 1;">
+          <h3>Add New Action</h3>
+          <form id="add-action-form" onsubmit="handleAddAction(event)">
+            <input type="hidden" id="action-server-id">
+            <div class="input-group">
+              <label>Event Trigger</label>
+              <select id="action-event-type" required onchange="updateActionForm()">
+                <option value="CHAT">Chat Message (contains)</option>
+                <option value="SUB_NEW">New Subscription</option>
+                <option value="SUB_GIFT">Gifted Subscriptions (>= threshold)</option>
+              </select>
+            </div>
+            
+            <div class="input-group" id="action-condition-group">
+              <label id="action-condition-label">Chat Keyword</label>
+              <input type="text" id="action-condition" placeholder="e.g. !creeper">
+            </div>
+
+            <div class="input-group">
+              <label>In-Game Action</label>
+              <select id="action-action-type" required onchange="updateActionForm()">
+                <option value="SPAWN_MOB">Spawn Mob</option>
+                <option value="DROP_HOTBAR">Drop Streamer Hotbar</option>
+                <option value="GIVE_ITEM">Give Item</option>
+                <option value="EXECUTE_COMMAND">Execute Console Command</option>
+              </select>
+            </div>
+
+            <!-- Dynamic payload fields -->
+            <div id="action-payload-fields" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+              <!-- Populated by JS -->
+            </div>
+
+            <button type="submit" class="primary-btn">Create Action</button>
+          </form>
+        </div>
+
+        <div style="flex: 1;">
+          <h3>Active Actions</h3>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.9rem;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--panel-border);">
+                  <th style="padding: 0.5rem;">Event</th>
+                  <th style="padding: 0.5rem;">Cond</th>
+                  <th style="padding: 0.5rem;">Action</th>
+                  <th style="padding: 0.5rem;"></th>
+                </tr>
+              </thead>
+              <tbody id="actions-table-body">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 1rem;">
+        <button type="button" class="secondary-btn" onclick="closeActionsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 

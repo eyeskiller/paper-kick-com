@@ -132,7 +132,10 @@ async function loadServers() {
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 1rem;">
           <div>
             <span style="font-size: 0.875rem; color: var(--text-muted); display: block;">👥 ${server._count.linkedUsers} linked players</span>
-            <button onclick="viewPlayers('${server.id}', '${server.name}')" class="secondary-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-top: 0.25rem;">View Players</button>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+              <button onclick="viewPlayers('${server.id}', '${server.name}')" class="secondary-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View Players</button>
+              <button onclick="openActionsModal('${server.id}', '${server.name}')" class="secondary-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: var(--primary); color: var(--primary);">Configure Actions</button>
+            </div>
           </div>
           <a href="/api/kick/auth?serverId=${server.id}" target="_blank" class="secondary-btn" style="text-decoration: none;">
             ${isLinked ? 'Re-link Kick' : 'Link Kick Channel'}
@@ -249,4 +252,153 @@ async function viewPlayers(serverId, serverName) {
 
 function closePlayersModal() {
   document.getElementById('players-modal').style.display = 'none';
+}
+
+// === ACTIONS ===
+function openActionsModal(serverId, serverName) {
+  document.getElementById('action-server-id').value = serverId;
+  document.getElementById('actions-modal-title').textContent = `Actions for ${serverName}`;
+  document.getElementById('actions-modal').style.display = 'flex';
+  updateActionForm();
+  loadActions(serverId);
+}
+
+function closeActionsModal() {
+  document.getElementById('actions-modal').style.display = 'none';
+}
+
+function updateActionForm() {
+  const eventType = document.getElementById('action-event-type').value;
+  const actionType = document.getElementById('action-action-type').value;
+  const conditionGroup = document.getElementById('action-condition-group');
+  const conditionLabel = document.getElementById('action-condition-label');
+  const conditionInput = document.getElementById('action-condition');
+  const payloadFields = document.getElementById('action-payload-fields');
+
+  // Condition
+  if (eventType === 'CHAT') {
+    conditionGroup.style.display = 'block';
+    conditionLabel.textContent = 'Chat Keyword';
+    conditionInput.placeholder = 'e.g. !creeper';
+  } else if (eventType === 'SUB_GIFT') {
+    conditionGroup.style.display = 'block';
+    conditionLabel.textContent = 'Gift Threshold';
+    conditionInput.placeholder = 'e.g. 5';
+  } else {
+    conditionGroup.style.display = 'none';
+  }
+
+  // Payload
+  payloadFields.innerHTML = '';
+  if (actionType === 'SPAWN_MOB') {
+    payloadFields.innerHTML = `
+      <div class="input-group"><label>Entity Type</label><input type="text" id="payload-entity" placeholder="e.g. CREEPER" required></div>
+      <div class="input-group"><label>Amount</label><input type="number" id="payload-amount" value="1" required></div>
+    `;
+  } else if (actionType === 'GIVE_ITEM') {
+    payloadFields.innerHTML = `
+      <div class="input-group"><label>Item Material</label><input type="text" id="payload-item" placeholder="e.g. DIAMOND" required></div>
+      <div class="input-group"><label>Amount</label><input type="number" id="payload-amount" value="1" required></div>
+    `;
+  } else if (actionType === 'EXECUTE_COMMAND') {
+    payloadFields.innerHTML = `
+      <div class="input-group"><label>Command</label><input type="text" id="payload-command" placeholder="e.g. say %sender% subbed!" required></div>
+    `;
+  } else if (actionType === 'DROP_HOTBAR') {
+    payloadFields.innerHTML = `<span style="font-size: 0.8rem; color: #ccc;">No additional configuration required.</span>`;
+  }
+}
+
+async function loadActions(serverId) {
+  const tbody = document.getElementById('actions-table-body');
+  tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+  
+  try {
+    const res = await fetch(`/api/dashboard/servers/${serverId}/actions`);
+    if (res.status === 401) return logout();
+    const actions = await res.json();
+    
+    tbody.innerHTML = '';
+    if (actions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted);">No actions configured.</td></tr>';
+      return;
+    }
+    
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--panel-border)';
+      
+      const evtBadge = action.eventType === 'CHAT' ? '💬 Chat' : action.eventType === 'SUB_NEW' ? '⭐ Sub' : '🎁 Gifts';
+      let pl = '';
+      try {
+        const parsed = JSON.parse(action.payload);
+        if (action.actionType === 'SPAWN_MOB') pl = `${parsed.amount}x ${parsed.entity}`;
+        else if (action.actionType === 'GIVE_ITEM') pl = `${parsed.amount}x ${parsed.item}`;
+        else if (action.actionType === 'EXECUTE_COMMAND') pl = `/${parsed.command}`;
+      } catch (e) {}
+
+      tr.innerHTML = `
+        <td style="padding: 0.5rem;">${evtBadge}</td>
+        <td style="padding: 0.5rem; color: var(--primary);">${action.condition || '-'}</td>
+        <td style="padding: 0.5rem;">${action.actionType}<br><span style="color: var(--text-muted); font-size: 0.75rem;">${pl}</span></td>
+        <td style="padding: 0.5rem; text-align: right;">
+          <button onclick="deleteAction('${serverId}', '${action.id}')" style="background: transparent; color: var(--error); border: none; cursor: pointer;">❌</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Failed to load actions', err);
+    tbody.innerHTML = '<tr><td colspan="4">Error loading actions.</td></tr>';
+  }
+}
+
+async function handleAddAction(e) {
+  e.preventDefault();
+  const serverId = document.getElementById('action-server-id').value;
+  const eventType = document.getElementById('action-event-type').value;
+  const actionType = document.getElementById('action-action-type').value;
+  let condition = document.getElementById('action-condition').value;
+  
+  if (eventType === 'SUB_NEW') condition = null;
+
+  let payload = {};
+  if (actionType === 'SPAWN_MOB') {
+    payload.entity = document.getElementById('payload-entity').value;
+    payload.amount = parseInt(document.getElementById('payload-amount').value);
+  } else if (actionType === 'GIVE_ITEM') {
+    payload.item = document.getElementById('payload-item').value;
+    payload.amount = parseInt(document.getElementById('payload-amount').value);
+  } else if (actionType === 'EXECUTE_COMMAND') {
+    payload.command = document.getElementById('payload-command').value;
+  }
+
+  try {
+    const res = await fetch(`/api/dashboard/servers/${serverId}/actions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventType, condition, actionType, payload: JSON.stringify(payload) })
+    });
+    if (!res.ok) throw new Error('Failed to create action');
+    
+    // Clear form
+    document.getElementById('action-condition').value = '';
+    loadActions(serverId);
+  } catch (err) {
+    console.error(err);
+    alert('Failed to add action');
+  }
+}
+
+async function deleteAction(serverId, actionId) {
+  try {
+    const res = await fetch(`/api/dashboard/servers/${serverId}/actions/${actionId}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('Failed to delete');
+    loadActions(serverId);
+  } catch (err) {
+    console.error(err);
+    alert('Failed to delete action');
+  }
 }

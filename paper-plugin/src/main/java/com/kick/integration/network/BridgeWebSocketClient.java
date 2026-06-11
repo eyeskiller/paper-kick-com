@@ -78,11 +78,8 @@ public class BridgeWebSocketClient extends WebSocketClient {
                             }
                         }
                         break;
-                    case "subscription_event":
-                        ActionHandler.handleSubscriptionEvent(plugin, data);
-                        break;
-                    case "chat_event":
-                        ActionHandler.handleChatEvent(plugin, data);
+                    case "execute_action":
+                        ActionHandler.handleExecuteAction(plugin, data);
                         break;
                 }
             } catch (Exception e) {

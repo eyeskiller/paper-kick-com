@@ -29,6 +29,7 @@ model Server {
   eventsEnabled Boolean  @default(true)
   linkedUsers   LinkedUser[]
   claimCodes    ClaimCode[]
+  actionRules   ActionRule[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -52,4 +53,16 @@ model ClaimCode {
   serverId      String
   server        Server   @relation(fields: [serverId], references: [id])
   createdAt     DateTime @default(now())
+}
+
+model ActionRule {
+  id            String   @id @default(uuid())
+  serverId      String
+  server        Server   @relation(fields: [serverId], references: [id])
+  eventType     String   // CHAT, SUB_NEW, SUB_GIFT
+  condition     String?  // e.g., "!creeper" or "5"
+  actionType    String   // SPAWN_MOB, DROP_HOTBAR, GIVE_ITEM, EXECUTE_COMMAND
+  payload       String   // JSON containing entity, amount, item, command
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

@@ -129,5 +129,69 @@ module.exports = function(prisma, requireAuth, wsManager) {
     }
   });
 
+  // Get actions for a server
+  router.get('/servers/:id/actions', requireAuth, async (req, res) => {
+    try {
+      const server = await prisma.server.findFirst({
+        where: { id: req.params.id, customerId: req.user.id }
+      });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
+
+      const actions = await prisma.actionRule.findMany({
+        where: { serverId: server.id },
+        orderBy: { createdAt: 'asc' }
+      });
+      res.json(actions);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
+  // Create an action
+  router.post('/servers/:id/actions', requireAuth, async (req, res) => {
+    try {
+      const server = await prisma.server.findFirst({
+        where: { id: req.params.id, customerId: req.user.id }
+      });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
+
+      const { eventType, condition, actionType, payload } = req.body;
+      if (!eventType || !actionType || !payload) return res.status(400).json({ error: 'Missing fields' });
+
+      const action = await prisma.actionRule.create({
+        data: {
+          serverId: server.id,
+          eventType,
+          condition: condition || null,
+          actionType,
+          payload
+        }
+      });
+      res.json(action);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
+  // Delete an action
+  router.delete('/servers/:id/actions/:actionId', requireAuth, async (req, res) => {
+    try {
+      const server = await prisma.server.findFirst({
+        where: { id: req.params.id, customerId: req.user.id }
+      });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
+
+      await prisma.actionRule.delete({
+        where: { id: req.params.actionId }
+      });
+      res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
   return router;
 };

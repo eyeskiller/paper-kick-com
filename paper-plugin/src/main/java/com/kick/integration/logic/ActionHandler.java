@@ -25,64 +25,7 @@ public class ActionHandler {
         }
     }
 
-    public static void executeActions(KickIntegrationPlugin plugin, Player streamer, String sender, List<Map<?, ?>> actions) {
-        if (actions == null) return;
-
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            for (Map<?, ?> actionMap : actions) {
-                String actionType = (String) actionMap.get("action");
-                if (actionType == null) continue;
-
-                switch (actionType.toUpperCase()) {
-                    case "SPAWN_MOB":
-                        String entityStr = (String) actionMap.get("entity");
-                        int amount = actionMap.containsKey("amount") ? (Integer) actionMap.get("amount") : 1;
-                        if (entityStr != null) {
-                            try {
-                                EntityType type = EntityType.valueOf(entityStr.toUpperCase());
-                                for (int i = 0; i < amount; i++) {
-                                    streamer.getWorld().spawnEntity(streamer.getLocation(), type);
-                                }
-                            } catch (IllegalArgumentException e) {
-                                plugin.getLogger().warning("Invalid entity type in config: " + entityStr);
-                            }
-                        }
-                        break;
-                    case "DROP_HOTBAR":
-                        for (int i = 0; i < 9; i++) {
-                            ItemStack item = streamer.getInventory().getItem(i);
-                            if (item != null && !item.getType().isAir()) {
-                                streamer.getWorld().dropItemNaturally(streamer.getLocation(), item);
-                                streamer.getInventory().setItem(i, null);
-                            }
-                        }
-                        break;
-                    case "GIVE_ITEM":
-                        String itemStr = (String) actionMap.get("item");
-                        int itemAmount = actionMap.containsKey("amount") ? (Integer) actionMap.get("amount") : 1;
-                        if (itemStr != null) {
-                            try {
-                                Material mat = Material.valueOf(itemStr.toUpperCase());
-                                streamer.getInventory().addItem(new ItemStack(mat, itemAmount));
-                            } catch (IllegalArgumentException e) {
-                                plugin.getLogger().warning("Invalid item material in config: " + itemStr);
-                            }
-                        }
-                        break;
-                    case "EXECUTE_COMMAND":
-                        String cmd = (String) actionMap.get("command");
-                        if (cmd != null) {
-                            cmd = cmd.replace("%streamer%", streamer.getName());
-                            cmd = cmd.replace("%sender%", sender);
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
-                        }
-                        break;
-                }
-            }
-        });
-    }
-
-    public static void handleSubscriptionEvent(KickIntegrationPlugin plugin, JsonObject data) {
+    public static void handleExecuteAction(KickIntegrationPlugin plugin, JsonObject data) {
         if (!plugin.getConfig().getBoolean("events-enabled", true)) {
             return;
         }
@@ -92,52 +35,66 @@ public class ActionHandler {
             return;
         }
 
-        String subType = data.has("subType") ? data.get("subType").getAsString() : "";
-        JsonObject eventData = data.getAsJsonObject("data");
-        
-        String sender = "Someone";
-        if (eventData != null && eventData.has("username")) {
-            sender = eventData.get("username").getAsString();
-        }
-
-        int giftedCount = 1;
-        if (eventData != null && eventData.has("count")) {
-            giftedCount = eventData.get("count").getAsInt();
-        }
-
-        if (subType.equals("channel.subscription.gifts")) {
-            List<Map<?, ?>> giftActions = plugin.getConfig().getMapList("kick-actions.subscription-gift");
-            for (Map<?, ?> actionMap : giftActions) {
-                int threshold = actionMap.containsKey("threshold") ? (Integer) actionMap.get("threshold") : 1;
-                if (giftedCount >= threshold) {
-                    executeActions(plugin, streamer, sender, List.of(actionMap));
-                }
-            }
-        } else if (subType.equals("channel.subscription.new") || subType.equals("channel.subscription.renewal")) {
-            List<Map<?, ?>> newSubActions = plugin.getConfig().getMapList("kick-actions.subscription-new");
-            executeActions(plugin, streamer, sender, newSubActions);
-        }
-    }
-
-    public static void handleChatEvent(KickIntegrationPlugin plugin, JsonObject data) {
-        if (!plugin.getConfig().getBoolean("events-enabled", true)) {
-            return;
-        }
-
-        Player streamer = getStreamerEntity(plugin);
-        if (streamer == null || !streamer.isOnline()) {
-            return;
-        }
+        String actionType = data.has("actionType") ? data.get("actionType").getAsString() : null;
+        if (actionType == null) return;
 
         String sender = data.has("sender") ? data.get("sender").getAsString() : "Unknown";
-        String content = data.has("content") ? data.get("content").getAsString() : "";
-
-        List<Map<?, ?>> chatActions = plugin.getConfig().getMapList("kick-actions.chat-triggers");
-        for (Map<?, ?> actionMap : chatActions) {
-            String containsStr = (String) actionMap.get("contains");
-            if (containsStr != null && content.toLowerCase().contains(containsStr.toLowerCase())) {
-                executeActions(plugin, streamer, sender, List.of(actionMap));
-            }
+        
+        String payloadStr = data.has("payload") ? data.get("payload").getAsString() : "{}";
+        JsonObject payload;
+        try {
+            payload = com.google.gson.JsonParser.parseString(payloadStr).getAsJsonObject();
+        } catch (Exception e) {
+            payload = new JsonObject();
         }
+
+        JsonObject finalPayload = payload;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            switch (actionType.toUpperCase()) {
+                case "SPAWN_MOB":
+                    String entityStr = finalPayload.has("entity") ? finalPayload.get("entity").getAsString() : null;
+                    int amount = finalPayload.has("amount") ? finalPayload.get("amount").getAsInt() : 1;
+                    if (entityStr != null) {
+                        try {
+                            EntityType type = EntityType.valueOf(entityStr.toUpperCase());
+                            for (int i = 0; i < amount; i++) {
+                                streamer.getWorld().spawnEntity(streamer.getLocation(), type);
+                            }
+                        } catch (IllegalArgumentException e) {
+                            plugin.getLogger().warning("Invalid entity type from bridge: " + entityStr);
+                        }
+                    }
+                    break;
+                case "DROP_HOTBAR":
+                    for (int i = 0; i < 9; i++) {
+                        ItemStack item = streamer.getInventory().getItem(i);
+                        if (item != null && !item.getType().isAir()) {
+                            streamer.getWorld().dropItemNaturally(streamer.getLocation(), item);
+                            streamer.getInventory().setItem(i, null);
+                        }
+                    }
+                    break;
+                case "GIVE_ITEM":
+                    String itemStr = finalPayload.has("item") ? finalPayload.get("item").getAsString() : null;
+                    int itemAmount = finalPayload.has("amount") ? finalPayload.get("amount").getAsInt() : 1;
+                    if (itemStr != null) {
+                        try {
+                            Material mat = Material.valueOf(itemStr.toUpperCase());
+                            streamer.getInventory().addItem(new ItemStack(mat, itemAmount));
+                        } catch (IllegalArgumentException e) {
+                            plugin.getLogger().warning("Invalid item material from bridge: " + itemStr);
+                        }
+                    }
+                    break;
+                case "EXECUTE_COMMAND":
+                    String cmd = finalPayload.has("command") ? finalPayload.get("command").getAsString() : null;
+                    if (cmd != null) {
+                        cmd = cmd.replace("%streamer%", streamer.getName());
+                        cmd = cmd.replace("%sender%", sender);
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                    }
+                    break;
+            }
+        });
     }
 }

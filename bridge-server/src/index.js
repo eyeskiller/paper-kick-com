@@ -300,11 +300,17 @@ app.post('/api/webhooks/kick', async (req, res) => {
       }
 
       if (dbServer.eventsEnabled) {
-        wsManager.routeToServer(dbServer.id, {
-          type: 'chat_event',
-          sender: sender,
-          content: messageText
-        });
+        const rules = await prisma.actionRule.findMany({ where: { serverId: dbServer.id, eventType: 'CHAT' } });
+        for (const rule of rules) {
+          if (!rule.condition || messageText.toLowerCase().includes(rule.condition.toLowerCase())) {
+            wsManager.routeToServer(dbServer.id, {
+              type: 'execute_action',
+              actionType: rule.actionType,
+              sender: sender,
+              payload: rule.payload
+            });
+          }
+        }
       }
     } else if (eventType === 'channel.subscription.new' || eventType === 'channel.subscription.renewal') {
       const subscriberUsername = event.subscriber?.username;
@@ -323,11 +329,15 @@ app.post('/api/webhooks/kick', async (req, res) => {
         }
       }
       if (dbServer.eventsEnabled) {
-        wsManager.routeToServer(dbServer.id, {
-          type: 'subscription_event',
-          subType: eventType,
-          data: { username: subscriberUsername }
-        });
+        const rules = await prisma.actionRule.findMany({ where: { serverId: dbServer.id, eventType: 'SUB_NEW' } });
+        for (const rule of rules) {
+          wsManager.routeToServer(dbServer.id, {
+            type: 'execute_action',
+            actionType: rule.actionType,
+            sender: subscriberUsername || "Someone",
+            payload: rule.payload
+          });
+        }
       }
     } else if (eventType === 'channel.subscription.gifts') {
       if (event.giftees && Array.isArray(event.giftees)) {
@@ -350,11 +360,19 @@ app.post('/api/webhooks/kick', async (req, res) => {
         }
       }
       if (dbServer.eventsEnabled) {
-        wsManager.routeToServer(dbServer.id, {
-          type: 'subscription_event',
-          subType: eventType,
-          data: { count: event.giftees ? event.giftees.length : 0 }
-        });
+        const count = event.giftees ? event.giftees.length : 0;
+        const rules = await prisma.actionRule.findMany({ where: { serverId: dbServer.id, eventType: 'SUB_GIFT' } });
+        for (const rule of rules) {
+          const threshold = rule.condition ? parseInt(rule.condition, 10) : 1;
+          if (count >= threshold) {
+            wsManager.routeToServer(dbServer.id, {
+              type: 'execute_action',
+              actionType: rule.actionType,
+              sender: "Someone",
+              payload: rule.payload
+            });
+          }
+        }
       }
     }
 

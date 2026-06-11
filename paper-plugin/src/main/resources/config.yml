@@ -4,26 +4,4 @@ bridge:
   api-key: "CHANGE_ME_IN_DASHBOARD"
 
 streamer-uuid: "00000000-0000-0000-0000-000000000000"
-events-enabled: true
 
-# Customizable actions based on Kick events
-# Supported actions: SPAWN_MOB, DROP_HOTBAR, GIVE_ITEM, EXECUTE_COMMAND
-kick-actions:
-  chat-triggers:
-    - contains: "!creeper"
-      action: "SPAWN_MOB"
-      entity: "CREEPER"
-      amount: 1
-    - contains: "!diamond"
-      action: "GIVE_ITEM"
-      item: "DIAMOND"
-      amount: 1
-  subscription-new:
-    - action: "SPAWN_MOB"
-      entity: "CREEPER"
-      amount: 2
-    - action: "EXECUTE_COMMAND"
-      command: "say %sender% just subscribed to %streamer%!"
-  subscription-gift:
-    - threshold: 5
-      action: "DROP_HOTBAR"
