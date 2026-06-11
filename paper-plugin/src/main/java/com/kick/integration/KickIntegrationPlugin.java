@@ -28,6 +28,7 @@ public class KickIntegrationPlugin extends JavaPlugin {
 
         getCommand("kick").setExecutor(new KickCommandExecutor(this));
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(new com.kick.integration.listeners.PlayerChatListener(), this);
 
         getLogger().info("KickIntegrationPlugin enabled!");
     }

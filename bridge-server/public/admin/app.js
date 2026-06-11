@@ -60,7 +60,11 @@ function showDashboard() {
     loginScreen.classList.remove('active');
     dashboard.classList.add('active');
     fetchStats();
-    pollInterval = setInterval(fetchStats, 5000);
+    fetchUsers();
+    pollInterval = setInterval(() => {
+        fetchStats();
+        fetchUsers();
+    }, 5000);
 }
 
 function formatUptime(seconds) {
@@ -107,5 +111,34 @@ async function fetchStats() {
         }
     } catch (err) {
         console.error("Failed to fetch stats", err);
+    }
+}
+
+async function fetchUsers() {
+    if (!token) return;
+    try {
+        const res = await fetch('/api/admin/users', { headers: { 'Authorization': token } });
+        if (!res.ok) return;
+        const users = await res.json();
+        const usersBody = document.getElementById('users-body');
+        usersBody.innerHTML = '';
+        if (users.length === 0) {
+            usersBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #8b92a5">No linked users</td></tr>`;
+        } else {
+            users.forEach(u => {
+                const date = new Date(u.createdAt).toLocaleString();
+                usersBody.innerHTML += `
+                    <tr>
+                        <td style="color: var(--kick-green); font-weight: 600;">${u.kickUsername}</td>
+                        <td>${u.minecraftUuid}</td>
+                        <td>${u.server ? u.server.name : 'Unknown'}</td>
+                        <td>${u.isSubscriber ? '<span class="status-badge" style="background: var(--kick-green); color: #000;">Yes</span>' : '<span style="color: #8b92a5;">No</span>'}</td>
+                        <td>${date}</td>
+                    </tr>
+                `;
+            });
+        }
+    } catch (e) {
+        console.error("Failed to fetch users", e);
     }
 }

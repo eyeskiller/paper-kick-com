@@ -69,6 +69,23 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
+app.get('/api/admin/users', async (req, res) => {
+  const auth = req.headers.authorization;
+  if (!process.env.ADMIN_PASSWORD || auth !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const users = await prisma.linkedUser.findMany({
+      include: { server: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
 let kickPublicKey = null;
 
 async function fetchKickPublicKey() {
