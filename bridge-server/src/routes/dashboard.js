@@ -89,5 +89,26 @@ module.exports = function(prisma, requireAuth, wsManager) {
     }
   });
 
+  router.delete('/servers/:id', requireAuth, async (req, res) => {
+    try {
+      const server = await prisma.server.findFirst({
+        where: { id: req.params.id, customerId: req.user.id }
+      });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
+
+      // Delete related records manually to handle lack of onDelete: Cascade
+      await prisma.linkedUser.deleteMany({ where: { serverId: server.id } });
+      await prisma.claimCode.deleteMany({ where: { serverId: server.id } });
+      
+      // Delete server
+      await prisma.server.delete({ where: { id: server.id } });
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
   return router;
 };
