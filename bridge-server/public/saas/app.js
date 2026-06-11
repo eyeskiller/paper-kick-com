@@ -1,5 +1,12 @@
 let currentAuthMode = 'login'; // 'login' or 'register'
 
+function showAuthView(mode) {
+  document.getElementById('landing-view').style.display = 'none';
+  document.getElementById('auth-view').style.display = 'flex';
+  document.getElementById('dashboard-view').style.display = 'none';
+  switchAuthTab(mode);
+}
+
 function switchAuthTab(mode) {
   currentAuthMode = mode;
   document.getElementById('tab-login').classList.toggle('active', mode === 'login');
@@ -29,6 +36,7 @@ async function handleAuth(e) {
 
     // Success
     document.getElementById('auth-view').style.display = 'none';
+    document.getElementById('landing-view').style.display = 'none';
     document.getElementById('dashboard-view').style.display = 'flex';
     document.getElementById('user-email').textContent = email;
     loadServers();
@@ -40,17 +48,25 @@ async function handleAuth(e) {
 async function logout() {
   await fetch('/api/auth/logout', { method: 'POST' });
   document.getElementById('dashboard-view').style.display = 'none';
-  document.getElementById('auth-view').style.display = 'flex';
+  document.getElementById('auth-view').style.display = 'none';
+  document.getElementById('landing-view').style.display = 'flex';
 }
 
 async function loadServers() {
   try {
     const res = await fetch('/api/dashboard/servers');
     if (!res.ok) {
-      if (res.status === 401) logout();
+      document.getElementById('landing-view').style.display = 'flex';
+      document.getElementById('dashboard-view').style.display = 'none';
+      document.getElementById('auth-view').style.display = 'none';
       return;
     }
     const servers = await res.json();
+    
+    // Authenticated! Show dashboard.
+    document.getElementById('landing-view').style.display = 'none';
+    document.getElementById('auth-view').style.display = 'none';
+    document.getElementById('dashboard-view').style.display = 'flex';
     
     const grid = document.getElementById('servers-grid');
     grid.innerHTML = '';
