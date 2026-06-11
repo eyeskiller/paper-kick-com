@@ -53,7 +53,14 @@ public class BridgeWebSocketClient extends WebSocketClient {
                         break;
                     case "claim_success":
                         String kickUsername = data.get("kickUsername").getAsString();
+                        String uuidStr = data.get("minecraftUuid").getAsString();
                         plugin.getLogger().info("Player linked Kick account: " + kickUsername);
+                        
+                        org.bukkit.entity.Player p = Bukkit.getPlayer(java.util.UUID.fromString(uuidStr));
+                        if (p != null) {
+                            p.setPlayerListName("§a[KICK] §r" + p.getName());
+                            p.sendMessage("§aYou have successfully linked your Kick account (" + kickUsername + ")!");
+                        }
                         break;
                     case "subscription_event":
                         ActionHandler.handleSubscriptionEvent(plugin, data);

@@ -40,12 +40,14 @@ public class PlayerJoinListener implements Listener {
                     
                     if (response.has("linked") && response.get("linked").getAsBoolean()) {
                         boolean isSub = response.has("isSubscriber") && response.get("isSubscriber").getAsBoolean();
-                        if (isSub) {
-                            // Run on main thread to apply prefix
-                            Bukkit.getScheduler().runTask(plugin, () -> {
-                                player.setPlayerListName("§d[Kick Sub] §r" + player.getName());
-                            });
-                        }
+                        // Run on main thread to apply prefix
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            if (isSub) {
+                                player.setPlayerListName("§d[KICK SUB] §r" + player.getName());
+                            } else {
+                                player.setPlayerListName("§a[KICK] §r" + player.getName());
+                            }
+                        });
                     }
                 }
             } catch (Exception e) {
