@@ -13,6 +13,7 @@ function switchAuthTab(mode) {
   document.getElementById('tab-register').classList.toggle('active', mode === 'register');
   document.getElementById('auth-btn').textContent = mode === 'login' ? 'Login' : 'Register';
   document.getElementById('auth-error').textContent = '';
+  document.getElementById('turnstile-container').style.display = mode === 'register' ? 'block' : 'none';
 }
 
 async function handleAuth(e) {
@@ -21,6 +22,14 @@ async function handleAuth(e) {
   const password = document.getElementById('password').value;
   const errorDiv = document.getElementById('auth-error');
   
+  const formData = new FormData(e.target);
+  const turnstileToken = formData.get('cf-turnstile-response');
+
+  if (currentAuthMode === 'register' && !turnstileToken) {
+    errorDiv.textContent = 'Please complete the CAPTCHA';
+    return;
+  }
+  
   errorDiv.textContent = '';
   const endpoint = currentAuthMode === 'login' ? '/api/auth/login' : '/api/auth/register';
 
@@ -28,7 +37,7 @@ async function handleAuth(e) {
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, turnstileToken })
     });
 
     const data = await res.json();
@@ -42,6 +51,9 @@ async function handleAuth(e) {
     loadServers();
   } catch (err) {
     errorDiv.textContent = err.message;
+    if (currentAuthMode === 'register' && window.turnstile) {
+      turnstile.reset();
+    }
   }
 }
 

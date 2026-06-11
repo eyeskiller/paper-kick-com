@@ -9,8 +9,26 @@ module.exports = function(prisma) {
   // Register a new customer
   router.post('/register', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, turnstileToken } = req.body;
       if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+      if (!turnstileToken) return res.status(400).json({ error: 'CAPTCHA token is required' });
+
+      // Verify Turnstile token
+      const secretKey = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+      const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: secretKey,
+          response: turnstileToken
+        })
+      });
+      const verifyData = await verifyRes.json();
+      
+      if (!verifyData.success) {
+        console.error('[Turnstile] Verification failed:', verifyData);
+        return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
+      }
 
       const existing = await prisma.customer.findUnique({ where: { email } });
       if (existing) return res.status(400).json({ error: 'Email already in use' });
