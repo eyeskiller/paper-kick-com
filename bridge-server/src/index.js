@@ -373,8 +373,21 @@ app.post('/api/webhooks/kick', async (req, res) => {
         const count = event.giftees ? event.giftees.length : 0;
         const rules = await prisma.actionRule.findMany({ where: { serverId: dbServer.id, eventType: 'SUB_GIFT' } });
         for (const rule of rules) {
-          const threshold = rule.condition ? parseInt(rule.condition, 10) : 1;
-          if (count >= threshold) {
+          let matches = false;
+          if (!rule.condition) {
+             matches = count >= 1;
+          } else if (rule.condition.startsWith('==')) {
+             const val = parseInt(rule.condition.substring(2), 10);
+             matches = count === val;
+          } else if (rule.condition.startsWith('>=')) {
+             const val = parseInt(rule.condition.substring(2), 10);
+             matches = count >= val;
+          } else {
+             // Fallback for older data
+             matches = count >= parseInt(rule.condition, 10);
+          }
+
+          if (matches) {
             wsManager.routeToServer(dbServer.id, {
               type: 'execute_action',
               actionType: rule.actionType,

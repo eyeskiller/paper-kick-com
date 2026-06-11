@@ -6,232 +6,367 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kick Integration Platform</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <style>
+    :root {
+      --bs-primary: #53fc18;
+      --bs-primary-rgb: 83, 252, 24;
+      --bs-body-bg: #f8f9fa;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-primary {
+      background-color: var(--bs-primary);
+      border-color: var(--bs-primary);
+      color: #000;
+      font-weight: 600;
+    }
+    
+    .btn-primary:hover {
+      background-color: #45d413;
+      border-color: #45d413;
+      color: #000;
+    }
+
+    .btn-outline-primary {
+      color: var(--bs-primary);
+      border-color: var(--bs-primary);
+    }
+    
+    .btn-outline-primary:hover {
+      background-color: var(--bs-primary);
+      color: #000;
+    }
+
+    /* Navbar */
+    .navbar-brand {
+      font-weight: 700;
+      color: #000;
+    }
+
+    .card-server {
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: none;
+      border-radius: 12px;
+      transition: transform 0.2s;
+    }
+    
+    .card-server:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Dark mode support if preferred, but user just said use bootstrap */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #121212;
+        color: #e0e0e0;
+      }
+      .card-server, .modal-content, .card {
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+      }
+      .text-muted {
+        color: #aaa !important;
+      }
+      .navbar {
+        background-color: #1e1e1e !important;
+        border-bottom: 1px solid #333;
+      }
+      .navbar-brand {
+        color: #fff;
+      }
+      .form-control, .form-select {
+        background-color: #2c2c2c;
+        border-color: #444;
+        color: #fff;
+      }
+      .form-control:focus, .form-select:focus {
+        background-color: #2c2c2c;
+        color: #fff;
+      }
+      .table {
+        color: #e0e0e0;
+      }
+      .table>:not(caption)>*>* {
+        background-color: transparent;
+        border-bottom-color: #333;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
   <!-- LANDING VIEW -->
-  <div id="landing-view" class="view-container" style="display: flex; align-items: center; justify-content: center;">
-    <div class="glass-panel" style="max-width: 800px; padding: 4rem 2rem; text-align: center;">
-      <h1 class="brand-title" style="font-size: 2.5rem; margin-bottom: 1rem;">Paper Kick Bridge</h1>
-      <p class="subtitle" style="font-size: 1.1rem; margin-bottom: 2rem;">Seamlessly connect your Kick.com live stream
-        to your Minecraft server. Let your viewers claim their accounts and interact with your game in real-time using
-        Kick's official Webhook API.</p>
+  <div id="landing-view" class="container min-vh-100 d-flex flex-column justify-content-center align-items-center py-5">
+    <div class="text-center mb-5">
+      <h1 class="display-4 fw-bold mb-3">Paper Kick Bridge</h1>
+      <p class="lead text-muted max-w-700 mx-auto" style="max-width: 700px;">
+        Seamlessly connect your Kick.com live stream to your Minecraft server. Let your viewers claim their accounts and interact with your game in real-time using Kick's official Webhook API.
+      </p>
+    </div>
 
-      <div style="display: flex; gap: 2rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap;">
-        <!-- Open Source Option -->
-        <div style="border: 1px solid var(--panel-border); background: var(--panel-bg); padding: 2rem; flex: 1; min-width: 300px; text-align: left;">
-          <h3 style="color: var(--text); font-size: 1.5rem; margin-bottom: 0.5rem;">Open Source</h3>
-          <p style="font-size: 1.5rem; font-weight: bold; color: var(--text); margin-bottom: 1rem;">Free Forever</p>
-          <ul style="list-style: none; padding: 0; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 2rem;">
-            <li>✓ Self-host on your own VPS</li>
-            <li>✓ Setup your own Webhooks & SSL</li>
-            <li>✓ Full access to source code</li>
-            <li>✓ Manage your own Node.js server</li>
-          </ul>
-          <a href="https://github.com/eyeskiller/paper-kick-com" target="_blank" class="secondary-btn" style="display: block; text-align: center; text-decoration: none;">View GitHub Repo</a>
-        </div>
-
-        <!-- SaaS Option -->
-        <div style="border: 1px solid var(--primary); background: var(--panel-bg); padding: 2rem; flex: 1; min-width: 300px; text-align: left; position: relative;">
-          <div style="position: absolute; top: -12px; right: 20px; background: var(--primary); color: #000; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: bold; text-transform: uppercase;">Recommended</div>
-          <h3 style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;">Hosted Bridge</h3>
-          <p style="font-size: 1.5rem; font-weight: bold; color: var(--text); margin-bottom: 1rem;">€1.99 <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted);">/ month</span></p>
-          <ul style="list-style: none; padding: 0; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 2rem;">
-            <li>✓ 1-Click Minecraft connection</li>
-            <li>✓ No VPS or coding required</li>
-            <li>✓ Web Dashboard for Kick Actions</li>
-            <li>✓ Automatic updates & 24/7 uptime</li>
-          </ul>
-          <button onclick="showAuthView('register')" class="primary-btn" style="width: 100%;">Get Started</button>
+    <div class="row g-4 w-100 justify-content-center" style="max-width: 900px;">
+      <!-- Open Source Option -->
+      <div class="col-md-6">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body p-4 text-start">
+            <h3 class="card-title fw-bold">Open Source</h3>
+            <p class="fs-4 fw-bold mb-4">Free Forever</p>
+            <ul class="list-unstyled text-muted mb-4 lh-lg">
+              <li>✓ Self-host on your own VPS</li>
+              <li>✓ Setup your own Webhooks & SSL</li>
+              <li>✓ Full access to source code</li>
+              <li>✓ Manage your own Node.js server</li>
+            </ul>
+            <a href="https://github.com/eyeskiller/paper-kick-com" target="_blank" class="btn btn-outline-dark w-100">View GitHub Repo</a>
+          </div>
         </div>
       </div>
 
-      <div style="margin-top: 2rem; font-size: 0.9rem; color: var(--text-muted);">
-        Already have an account? <a href="#" onclick="showAuthView('login'); return false;" style="color: var(--primary);">Login here</a>
+      <!-- SaaS Option -->
+      <div class="col-md-6">
+        <div class="card h-100 shadow border-primary position-relative">
+          <div class="position-absolute top-0 end-0 bg-primary text-dark px-3 py-1 fw-bold text-uppercase small" style="border-bottom-left-radius: 8px;">Recommended</div>
+          <div class="card-body p-4 text-start">
+            <h3 class="card-title fw-bold text-primary">Hosted Bridge</h3>
+            <p class="fs-4 fw-bold mb-4">€1.99 <span class="fs-6 fw-normal text-muted">/ month</span></p>
+            <ul class="list-unstyled text-muted mb-4 lh-lg">
+              <li>✓ 1-Click Minecraft connection</li>
+              <li>✓ No VPS or coding required</li>
+              <li>✓ Web Dashboard for Kick Actions</li>
+              <li>✓ Automatic updates & 24/7 uptime</li>
+            </ul>
+            <button onclick="showAuthView('register')" class="btn btn-primary w-100">Get Started</button>
+          </div>
+        </div>
       </div>
+    </div>
+
+    <div class="mt-5 text-muted">
+      Already have an account? <a href="#" onclick="showAuthView('login'); return false;" class="text-primary text-decoration-none fw-semibold">Login here</a>
     </div>
   </div>
 
   <!-- AUTHENTICATION VIEW -->
-  <div id="auth-view" class="view-container" style="display: none;">
-    <div class="glass-panel auth-panel">
-      <h1 class="brand-title">Kick Integration Platform</h1>
-      <p class="subtitle">Connect your Minecraft server to Kick.</p>
+  <div id="auth-view" class="container min-vh-100 d-flex flex-column justify-content-center align-items-center py-5" style="display: none !important;">
+    <div class="card shadow-sm border-0 w-100" style="max-width: 450px;">
+      <div class="card-body p-5">
+        <h2 class="fw-bold mb-1 text-center">Kick Integration</h2>
+        <p class="text-muted text-center mb-4">Connect your Minecraft server to Kick.</p>
 
-      <div class="tabs">
-        <button id="tab-login" class="tab active" onclick="switchAuthTab('login')">Login</button>
-        <button id="tab-register" class="tab" onclick="switchAuthTab('register')">Register</button>
+        <ul class="nav nav-pills nav-justified mb-4" id="auth-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-login" onclick="switchAuthTab('login')" type="button">Login</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-register" onclick="switchAuthTab('register')" type="button">Register</button>
+          </li>
+        </ul>
+
+        <form id="auth-form" onsubmit="handleAuth(event)">
+          <div class="mb-3">
+            <label for="email" class="form-label fw-semibold">Email</label>
+            <input type="email" class="form-control" id="email" required placeholder="you@example.com">
+          </div>
+          <div class="mb-4">
+            <label for="password" class="form-label fw-semibold">Password</label>
+            <input type="password" class="form-control" id="password" required placeholder="••••••••">
+          </div>
+
+          <div id="turnstile-container" class="mb-4 d-flex justify-content-center">
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAADi1E1ct0Kqj9tZ2"></div>
+          </div>
+
+          <button type="submit" id="auth-btn" class="btn btn-primary w-100 fw-bold">Login</button>
+        </form>
+        
+        <div id="auth-error" class="alert alert-danger mt-3 d-none" role="alert"></div>
       </div>
-
-      <form id="auth-form" onsubmit="handleAuth(event)">
-        <div class="input-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" required placeholder="you@example.com">
-        </div>
-        <div class="input-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" required placeholder="••••••••">
-        </div>
-
-        <div id="turnstile-container" style="margin-bottom: 1rem;">
-          <div class="cf-turnstile" data-sitekey="0x4AAAAAADi1E1ct0Kqj9tZ2"></div>
-        </div>
-
-        <button type="submit" id="auth-btn" class="primary-btn">Login</button>
-      </form>
-      <div id="auth-error" class="error-msg"></div>
     </div>
   </div>
 
   <!-- DASHBOARD VIEW -->
-  <div id="dashboard-view" class="view-container" style="display: none;">
-    <nav class="glass-navbar">
-      <div class="brand">Kick Integration</div>
-      <div class="nav-links">
-        <span id="user-email"></span>
-        <button onclick="logout()" class="secondary-btn">Logout</button>
+  <div id="dashboard-view" class="min-vh-100 d-flex flex-column" style="display: none !important;">
+    <nav class="navbar navbar-expand-lg bg-white shadow-sm py-3">
+      <div class="container">
+        <span class="navbar-brand mb-0 h1">Kick Integration</span>
+        <div class="d-flex align-items-center gap-3">
+          <span id="user-email" class="text-muted"></span>
+          <button onclick="logout()" class="btn btn-outline-secondary btn-sm">Logout</button>
+        </div>
       </div>
     </nav>
 
-    <main class="dashboard-content">
-      <header class="dashboard-header">
-        <h2>Your Servers</h2>
-        <button onclick="openNewServerModal()" class="primary-btn">+ Add Server</button>
-      </header>
+    <main class="container py-5 flex-grow-1">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Your Servers</h2>
+        <button onclick="openNewServerModal()" class="btn btn-primary">+ Add Server</button>
+      </div>
 
-      <div id="servers-grid" class="servers-grid">
+      <div id="servers-grid" class="row g-4">
         <!-- Server cards populated here -->
       </div>
     </main>
   </div>
 
   <!-- NEW SERVER MODAL -->
-  <div id="new-server-modal" class="modal-overlay" style="display: none;">
-    <div class="glass-panel modal">
-      <h2>Add New Server</h2>
-      <form onsubmit="handleCreateServer(event)">
-        <div class="input-group">
-          <label>Minecraft Server Name</label>
-          <input type="text" id="new-server-name" required placeholder="e.g. Factions PvP">
+  <div class="modal" id="new-server-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold">Add New Server</h5>
+          <button type="button" class="btn-close" onclick="closeNewServerModal()"></button>
         </div>
-        <div class="alert-info">
-          Optional: Provide your own Kick Developer credentials to use your own branding. Leave blank to use our global
-          Kick App.
+        <div class="modal-body">
+          <form onsubmit="handleCreateServer(event)">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Minecraft Server Name</label>
+              <input type="text" class="form-control" id="new-server-name" required placeholder="e.g. Factions PvP">
+            </div>
+            
+            <div class="alert alert-info py-2 small" role="alert">
+              Optional: Provide your own Kick Developer credentials to use your own branding. Leave blank to use our global Kick App.
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Kick Client ID (Optional)</label>
+              <input type="text" class="form-control" id="new-server-client-id" placeholder="Client ID">
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Kick Client Secret (Optional)</label>
+              <input type="password" class="form-control" id="new-server-secret" placeholder="Client Secret">
+            </div>
+            
+            <div class="d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-outline-secondary" onclick="closeNewServerModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create</button>
+            </div>
+          </form>
         </div>
-        <div class="input-group">
-          <label>Kick Client ID (Optional)</label>
-          <input type="text" id="new-server-client-id" placeholder="Client ID">
-        </div>
-        <div class="input-group">
-          <label>Kick Client Secret (Optional)</label>
-          <input type="password" id="new-server-secret" placeholder="Client Secret">
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="secondary-btn" onclick="closeNewServerModal()">Cancel</button>
-          <button type="submit" class="primary-btn">Create</button>
-        </div>
-      </form>
+      </div>
     </div>
   </div>
 
   <!-- PLAYERS MODAL -->
-  <div id="players-modal" class="modal-overlay" style="display: none;">
-    <div class="glass-panel modal" style="max-width: 600px;">
-      <h2 id="players-modal-title">Linked Players</h2>
-
-      <div style="max-height: 400px; overflow-y: auto; margin-bottom: 1rem;">
-        <table style="width: 100%; text-align: left; border-collapse: collapse;">
-          <thead>
-            <tr style="border-bottom: 1px solid var(--panel-border);">
-              <th style="padding: 0.75rem;">Kick Username</th>
-              <th style="padding: 0.75rem;">Minecraft UUID</th>
-              <th style="padding: 0.75rem;">Subscriber</th>
-            </tr>
-          </thead>
-          <tbody id="players-table-body">
-            <!-- Populated via JS -->
-          </tbody>
-        </table>
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="secondary-btn" onclick="closePlayersModal()">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ACTIONS MODAL -->
-  <div id="actions-modal" class="modal-overlay" style="display: none;">
-    <div class="glass-panel modal" style="max-width: 800px; width: 100%;">
-      <h2 id="actions-modal-title">Event Actions</h2>
-
-      <div style="display: flex; gap: 2rem;">
-        <div style="flex: 1;">
-          <h3>Add New Action</h3>
-          <form id="add-action-form" onsubmit="handleAddAction(event)">
-            <input type="hidden" id="action-server-id">
-            <div class="input-group">
-              <label>Event Trigger</label>
-              <select id="action-event-type" required onchange="updateActionForm()">
-                <option value="CHAT">Chat Message (contains)</option>
-                <option value="SUB_NEW">New Subscription</option>
-                <option value="SUB_GIFT">Gifted Subscriptions (>= threshold)</option>
-              </select>
-            </div>
-            
-            <div class="input-group" id="action-condition-group">
-              <label id="action-condition-label">Chat Keyword</label>
-              <input type="text" id="action-condition" placeholder="e.g. !creeper">
-            </div>
-
-            <div class="input-group">
-              <label>In-Game Action</label>
-              <select id="action-action-type" required onchange="updateActionForm()">
-                <option value="SPAWN_MOB">Spawn Mob</option>
-                <option value="DROP_HOTBAR">Drop Streamer Hotbar</option>
-                <option value="GIVE_ITEM">Give Item</option>
-                <option value="EXECUTE_COMMAND">Execute Console Command</option>
-              </select>
-            </div>
-
-            <!-- Dynamic payload fields -->
-            <div id="action-payload-fields" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-              <!-- Populated by JS -->
-            </div>
-
-            <button type="submit" class="primary-btn">Create Action</button>
-          </form>
+  <div class="modal" id="players-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold" id="players-modal-title">Linked Players</h5>
+          <button type="button" class="btn-close" onclick="closePlayersModal()"></button>
         </div>
-
-        <div style="flex: 1;">
-          <h3>Active Actions</h3>
-          <div style="max-height: 400px; overflow-y: auto;">
-            <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.9rem;">
-              <thead>
-                <tr style="border-bottom: 1px solid var(--panel-border);">
-                  <th style="padding: 0.5rem;">Event</th>
-                  <th style="padding: 0.5rem;">Cond</th>
-                  <th style="padding: 0.5rem;">Action</th>
-                  <th style="padding: 0.5rem;"></th>
+        <div class="modal-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-4">Kick Username</th>
+                  <th>Minecraft UUID</th>
+                  <th class="pe-4">Subscriber</th>
                 </tr>
               </thead>
-              <tbody id="actions-table-body">
+              <tbody id="players-table-body">
                 <!-- Populated via JS -->
               </tbody>
             </table>
           </div>
         </div>
-      </div>
-
-      <div class="modal-actions" style="margin-top: 1rem;">
-        <button type="button" class="secondary-btn" onclick="closeActionsModal()">Close</button>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-secondary" onclick="closePlayersModal()">Close</button>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- ACTIONS MODAL -->
+  <div class="modal" id="actions-modal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold" id="actions-modal-title">Event Actions</h5>
+          <button type="button" class="btn-close" onclick="closeActionsModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-5">
+            <!-- Form Section -->
+            <div class="col-lg-5 border-end">
+              <h6 class="fw-bold mb-3 text-uppercase text-muted">Add New Action</h6>
+              <form id="add-action-form" onsubmit="handleAddAction(event)">
+                <input type="hidden" id="action-server-id">
+                
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Event Trigger</label>
+                  <select class="form-select" id="action-event-type" required onchange="updateActionForm()">
+                    <option value="CHAT">Chat Message (contains)</option>
+                    <option value="SUB_NEW">New Subscription</option>
+                    <option value="SUB_GIFT">Gifted Subscriptions</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3" id="action-condition-group">
+                  <label class="form-label fw-semibold" id="action-condition-label">Condition</label>
+                  <div class="d-flex gap-2">
+                    <select class="form-select w-auto" id="action-condition-operator" style="display: none;">
+                      <option value="==">Exact (=)</option>
+                      <option value=">=">Greater than or equal (>=)</option>
+                    </select>
+                    <input type="text" class="form-control" id="action-condition" placeholder="e.g. !creeper">
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">In-Game Action</label>
+                  <select class="form-select" id="action-action-type" required onchange="updateActionForm()">
+                    <option value="SPAWN_MOB">Spawn Mob</option>
+                    <option value="DROP_HOTBAR">Drop Streamer Hotbar</option>
+                    <option value="GIVE_ITEM">Give Item</option>
+                    <option value="EXECUTE_COMMAND">Execute Console Command</option>
+                  </select>
+                </div>
+
+                <!-- Dynamic payload fields -->
+                <div id="action-payload-fields" class="bg-light p-3 rounded mb-4 border">
+                  <!-- Populated by JS -->
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 fw-bold">Create Action</button>
+              </form>
+            </div>
+
+            <!-- Table Section -->
+            <div class="col-lg-7">
+              <h6 class="fw-bold mb-3 text-uppercase text-muted">Active Actions</h6>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Event</th>
+                      <th>Condition</th>
+                      <th>Action</th>
+                      <th class="text-end"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="actions-table-body">
+                    <!-- Populated via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-secondary" onclick="closeActionsModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="app.js"></script>
 </body>
 

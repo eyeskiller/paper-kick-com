@@ -1,9 +1,17 @@
-let currentAuthMode = 'login'; // 'login' or 'register'
+let currentAuthMode = 'login';
+let newServerModal, playersModal, actionsModal;
+
+document.addEventListener("DOMContentLoaded", () => {
+  newServerModal = new bootstrap.Modal(document.getElementById('new-server-modal'));
+  playersModal = new bootstrap.Modal(document.getElementById('players-modal'));
+  actionsModal = new bootstrap.Modal(document.getElementById('actions-modal'));
+  loadServers();
+});
 
 function showAuthView(mode) {
-  document.getElementById('landing-view').style.display = 'none';
-  document.getElementById('auth-view').style.display = 'flex';
-  document.getElementById('dashboard-view').style.display = 'none';
+  document.getElementById('landing-view').style.setProperty('display', 'none', 'important');
+  document.getElementById('auth-view').style.setProperty('display', 'flex', 'important');
+  document.getElementById('dashboard-view').style.setProperty('display', 'none', 'important');
   switchAuthTab(mode);
 }
 
@@ -12,7 +20,7 @@ function switchAuthTab(mode) {
   document.getElementById('tab-login').classList.toggle('active', mode === 'login');
   document.getElementById('tab-register').classList.toggle('active', mode === 'register');
   document.getElementById('auth-btn').textContent = mode === 'login' ? 'Login' : 'Register';
-  document.getElementById('auth-error').textContent = '';
+  document.getElementById('auth-error').classList.add('d-none');
   if (window.turnstile) { turnstile.reset(); }
 }
 
@@ -27,10 +35,11 @@ async function handleAuth(e) {
 
   if (!turnstileToken) {
     errorDiv.textContent = 'Please complete the CAPTCHA';
+    errorDiv.classList.remove('d-none');
     return;
   }
   
-  errorDiv.textContent = '';
+  errorDiv.classList.add('d-none');
   const endpoint = currentAuthMode === 'login' ? '/api/auth/login' : '/api/auth/register';
 
   try {
@@ -44,13 +53,14 @@ async function handleAuth(e) {
     if (!res.ok) throw new Error(data.error || 'Authentication failed');
 
     // Success
-    document.getElementById('auth-view').style.display = 'none';
-    document.getElementById('landing-view').style.display = 'none';
-    document.getElementById('dashboard-view').style.display = 'flex';
+    document.getElementById('auth-view').style.setProperty('display', 'none', 'important');
+    document.getElementById('landing-view').style.setProperty('display', 'none', 'important');
+    document.getElementById('dashboard-view').style.setProperty('display', 'flex', 'important');
     document.getElementById('user-email').textContent = email;
     loadServers();
   } catch (err) {
     errorDiv.textContent = err.message;
+    errorDiv.classList.remove('d-none');
     if (window.turnstile) {
       turnstile.reset();
     }
@@ -59,87 +69,86 @@ async function handleAuth(e) {
 
 async function logout() {
   await fetch('/api/auth/logout', { method: 'POST' });
-  document.getElementById('dashboard-view').style.display = 'none';
-  document.getElementById('auth-view').style.display = 'none';
-  document.getElementById('landing-view').style.display = 'flex';
+  document.getElementById('dashboard-view').style.setProperty('display', 'none', 'important');
+  document.getElementById('auth-view').style.setProperty('display', 'none', 'important');
+  document.getElementById('landing-view').style.setProperty('display', 'flex', 'important');
 }
 
 async function loadServers() {
   try {
     const res = await fetch('/api/dashboard/servers');
     if (!res.ok) {
-      document.getElementById('landing-view').style.display = 'flex';
-      document.getElementById('dashboard-view').style.display = 'none';
-      document.getElementById('auth-view').style.display = 'none';
+      document.getElementById('landing-view').style.setProperty('display', 'flex', 'important');
+      document.getElementById('dashboard-view').style.setProperty('display', 'none', 'important');
+      document.getElementById('auth-view').style.setProperty('display', 'none', 'important');
       return;
     }
     const servers = await res.json();
     
     // Authenticated! Show dashboard.
-    document.getElementById('landing-view').style.display = 'none';
-    document.getElementById('auth-view').style.display = 'none';
-    document.getElementById('dashboard-view').style.display = 'flex';
+    document.getElementById('landing-view').style.setProperty('display', 'none', 'important');
+    document.getElementById('auth-view').style.setProperty('display', 'none', 'important');
+    document.getElementById('dashboard-view').style.setProperty('display', 'flex', 'important');
     
     const grid = document.getElementById('servers-grid');
     grid.innerHTML = '';
 
     if (servers.length === 0) {
-      grid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1;">No servers found. Create one to get started!</p>';
+      grid.innerHTML = '<div class="col-12 text-muted">No servers found. Create one to get started!</div>';
       return;
     }
 
     servers.forEach(server => {
-      const card = document.createElement('div');
-      card.className = 'glass-panel server-card';
-      
       const isLinked = server.kickChannel ? true : false;
       const linkBadge = isLinked 
-        ? `<span class="status-badge">Kick: @${server.kickChannel}</span>`
-        : `<span class="status-badge">Kick: Unlinked</span>`;
+        ? `<span class="badge bg-secondary">Kick: @${server.kickChannel}</span>`
+        : `<span class="badge bg-warning text-dark">Kick: Unlinked</span>`;
 
       const wsBadge = server.isConnected
-        ? `<span class="status-badge">🟢 Online</span>`
-        : `<span class="status-badge">🔴 Offline</span>`;
+        ? `<span class="badge bg-success">🟢 Online</span>`
+        : `<span class="badge bg-danger">🔴 Offline</span>`;
 
+      const card = document.createElement('div');
+      card.className = 'col-md-6 col-lg-4';
       card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <h3>${server.name}</h3>
-          <div style="display: flex; gap: 0.5rem; flex-direction: column; align-items: flex-end;">
-            ${wsBadge}
-            ${linkBadge}
-          </div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: auto;">
-          <div style="flex: 1;">
-            <label style="font-size: 0.75rem; color: var(--text-muted);">Plugin API Key</label>
-            <div class="api-key-box">${server.apiKey}</div>
-          </div>
-          
-          <div style="margin-left: 1rem; margin-top: 1rem; text-align: center;">
-            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 1px;">Game Events</label>
-            <label class="switch" style="position: relative; display: inline-block; width: 40px; height: 20px;">
-              <input type="checkbox" onchange="toggleEvents('${server.id}', this.checked)" ${server.eventsEnabled ? 'checked' : ''}>
-              <span class="slider"></span>
-            </label>
-          </div>
+        <div class="card card-server h-100">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h5 class="card-title fw-bold mb-0">${server.name}</h5>
+              <div class="d-flex flex-column align-items-end gap-1">
+                ${wsBadge}
+                ${linkBadge}
+              </div>
+            </div>
+            
+            <div class="mb-4">
+              <label class="form-label small text-muted text-uppercase fw-bold mb-1">Plugin API Key</label>
+              <div class="bg-light p-2 rounded text-monospace small border font-monospace text-break">${server.apiKey}</div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="switch-${server.id}" onchange="toggleEvents('${server.id}', this.checked)" ${server.eventsEnabled ? 'checked' : ''}>
+                <label class="form-check-label small fw-semibold" for="switch-${server.id}">Game Events</label>
+              </div>
+              <button onclick="deleteServer('${server.id}')" class="btn btn-outline-danger btn-sm" title="Delete Server">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </button>
+            </div>
 
-          <button onclick="deleteServer('${server.id}')" title="Delete Server" style="background: transparent; color: var(--error); border: 1px solid var(--error); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-left: 1rem; margin-top: 1rem;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-          </button>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 1rem;">
-          <div>
-            <span style="font-size: 0.875rem; color: var(--text-muted); display: block;">👥 ${server._count.linkedUsers} linked players</span>
-            <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
-              <button onclick="viewPlayers('${server.id}', '${server.name}')" class="secondary-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View Players</button>
-              <button onclick="openActionsModal('${server.id}', '${server.name}')" class="secondary-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: var(--primary); color: var(--primary);">Configure Actions</button>
+            <div class="mt-auto border-top pt-3">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="small text-muted fw-medium">👥 ${server._count.linkedUsers} linked players</span>
+                <a href="/api/kick/auth?serverId=${server.id}" target="_blank" class="btn btn-outline-primary btn-sm">
+                  ${isLinked ? 'Re-link Kick' : 'Link Kick Channel'}
+                </a>
+              </div>
+              <div class="d-flex gap-2">
+                <button onclick="viewPlayers('${server.id}', '${server.name}')" class="btn btn-light btn-sm flex-fill fw-semibold border">Players</button>
+                <button onclick="openActionsModal('${server.id}', '${server.name}')" class="btn btn-primary btn-sm flex-fill fw-semibold">Actions</button>
+              </div>
             </div>
           </div>
-          <a href="/api/kick/auth?serverId=${server.id}" target="_blank" class="secondary-btn" style="text-decoration: none;">
-            ${isLinked ? 'Re-link Kick' : 'Link Kick Channel'}
-          </a>
         </div>
       `;
       grid.appendChild(card);
@@ -150,11 +159,11 @@ async function loadServers() {
 }
 
 function openNewServerModal() {
-  document.getElementById('new-server-modal').style.display = 'flex';
+  newServerModal.show();
 }
 
 function closeNewServerModal() {
-  document.getElementById('new-server-modal').style.display = 'none';
+  newServerModal.hide();
   document.getElementById('new-server-name').value = '';
   document.getElementById('new-server-client-id').value = '';
   document.getElementById('new-server-secret').value = '';
@@ -212,14 +221,11 @@ async function toggleEvents(serverId, isEnabled) {
   }
 }
 
-// Initial check
-loadServers();
-
 async function viewPlayers(serverId, serverName) {
   document.getElementById('players-modal-title').textContent = `Linked Players - ${serverName}`;
   const tbody = document.getElementById('players-table-body');
-  tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center;">Loading...</td></tr>';
-  document.getElementById('players-modal').style.display = 'flex';
+  tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4">Loading...</td></tr>';
+  playersModal.show();
 
   try {
     const res = await fetch(`/api/dashboard/servers/${serverId}/users`);
@@ -228,43 +234,43 @@ async function viewPlayers(serverId, serverName) {
 
     tbody.innerHTML = '';
     if (users.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">No linked players found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No linked players found.</td></tr>';
       return;
     }
 
     users.forEach(u => {
       const subBadge = u.isSubscriber 
-        ? '<span style="background: rgba(139,92,246,0.2); color: #8b5cf6; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Yes</span>' 
-        : '<span style="color: var(--text-muted); font-size: 0.75rem;">No</span>';
+        ? '<span class="badge bg-primary">Yes</span>' 
+        : '<span class="badge bg-secondary text-dark">No</span>';
         
       tbody.innerHTML += `
-        <tr style="border-bottom: 1px solid var(--panel-border);">
-          <td style="padding: 0.75rem;">${u.kickUsername}</td>
-          <td style="padding: 0.75rem; font-family: monospace; font-size: 0.8rem;">${u.minecraftUuid}</td>
-          <td style="padding: 0.75rem;">${subBadge}</td>
+        <tr>
+          <td class="fw-medium">${u.kickUsername}</td>
+          <td class="font-monospace small text-muted">${u.minecraftUuid}</td>
+          <td>${subBadge}</td>
         </tr>
       `;
     });
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--error);">${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger">${err.message}</td></tr>`;
   }
 }
 
 function closePlayersModal() {
-  document.getElementById('players-modal').style.display = 'none';
+  playersModal.hide();
 }
 
 // === ACTIONS ===
 function openActionsModal(serverId, serverName) {
   document.getElementById('action-server-id').value = serverId;
   document.getElementById('actions-modal-title').textContent = `Actions for ${serverName}`;
-  document.getElementById('actions-modal').style.display = 'flex';
+  actionsModal.show();
   updateActionForm();
   loadActions(serverId);
 }
 
 function closeActionsModal() {
-  document.getElementById('actions-modal').style.display = 'none';
+  actionsModal.hide();
 }
 
 function updateActionForm() {
@@ -272,18 +278,24 @@ function updateActionForm() {
   const actionType = document.getElementById('action-action-type').value;
   const conditionGroup = document.getElementById('action-condition-group');
   const conditionLabel = document.getElementById('action-condition-label');
+  const conditionOperator = document.getElementById('action-condition-operator');
   const conditionInput = document.getElementById('action-condition');
   const payloadFields = document.getElementById('action-payload-fields');
 
   // Condition
   if (eventType === 'CHAT') {
     conditionGroup.style.display = 'block';
+    conditionOperator.style.display = 'none';
     conditionLabel.textContent = 'Chat Keyword';
+    conditionInput.type = 'text';
     conditionInput.placeholder = 'e.g. !creeper';
   } else if (eventType === 'SUB_GIFT') {
     conditionGroup.style.display = 'block';
-    conditionLabel.textContent = 'Gift Threshold';
+    conditionOperator.style.display = 'block';
+    conditionLabel.textContent = 'Gift Amount Condition';
+    conditionInput.type = 'number';
     conditionInput.placeholder = 'e.g. 5';
+    conditionInput.min = '1';
   } else {
     conditionGroup.style.display = 'none';
   }
@@ -292,26 +304,62 @@ function updateActionForm() {
   payloadFields.innerHTML = '';
   if (actionType === 'SPAWN_MOB') {
     payloadFields.innerHTML = `
-      <div class="input-group"><label>Entity Type</label><input type="text" id="payload-entity" placeholder="e.g. CREEPER" required></div>
-      <div class="input-group"><label>Amount</label><input type="number" id="payload-amount" value="1" required></div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Entity Type</label>
+        <select class="form-select" id="payload-entity" required>
+          <option value="CREEPER">Creeper</option>
+          <option value="ZOMBIE">Zombie</option>
+          <option value="SKELETON">Skeleton</option>
+          <option value="SPIDER">Spider</option>
+          <option value="ENDERMAN">Enderman</option>
+          <option value="PIG">Pig</option>
+          <option value="COW">Cow</option>
+          <option value="SHEEP">Sheep</option>
+          <option value="CHICKEN">Chicken</option>
+          <option value="WARDEN">Warden</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Amount</label>
+        <input type="number" class="form-control" id="payload-amount" value="1" min="1" max="100" required>
+      </div>
     `;
   } else if (actionType === 'GIVE_ITEM') {
     payloadFields.innerHTML = `
-      <div class="input-group"><label>Item Material</label><input type="text" id="payload-item" placeholder="e.g. DIAMOND" required></div>
-      <div class="input-group"><label>Amount</label><input type="number" id="payload-amount" value="1" required></div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Item Material</label>
+        <select class="form-select" id="payload-item" required>
+          <option value="DIAMOND">Diamond</option>
+          <option value="EMERALD">Emerald</option>
+          <option value="IRON_INGOT">Iron Ingot</option>
+          <option value="GOLD_INGOT">Gold Ingot</option>
+          <option value="NETHERITE_INGOT">Netherite Ingot</option>
+          <option value="DIRT">Dirt</option>
+          <option value="COBBLESTONE">Cobblestone</option>
+          <option value="ENCHANTED_GOLDEN_APPLE">Enchanted Golden Apple</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Amount</label>
+        <input type="number" class="form-control" id="payload-amount" value="1" min="1" max="64" required>
+      </div>
     `;
   } else if (actionType === 'EXECUTE_COMMAND') {
     payloadFields.innerHTML = `
-      <div class="input-group"><label>Command</label><input type="text" id="payload-command" placeholder="e.g. say %sender% subbed!" required></div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Command</label>
+        <input type="text" class="form-control" id="payload-command" placeholder="e.g. kick %streamer%" required>
+        <div class="form-text small">Variables: %streamer%, %sender%</div>
+      </div>
     `;
   } else if (actionType === 'DROP_HOTBAR') {
-    payloadFields.innerHTML = `<span style="font-size: 0.8rem; color: #ccc;">No additional configuration required.</span>`;
+    payloadFields.innerHTML = `<span class="small text-muted">No additional configuration required.</span>`;
   }
 }
 
 async function loadActions(serverId) {
   const tbody = document.getElementById('actions-table-body');
-  tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Loading...</td></tr>';
   
   try {
     const res = await fetch(`/api/dashboard/servers/${serverId}/actions`);
@@ -320,15 +368,17 @@ async function loadActions(serverId) {
     
     tbody.innerHTML = '';
     if (actions.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted);">No actions configured.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No actions configured.</td></tr>';
       return;
     }
     
     actions.forEach(action => {
       const tr = document.createElement('tr');
-      tr.style.borderBottom = '1px solid var(--panel-border)';
       
-      const evtBadge = action.eventType === 'CHAT' ? '💬 Chat' : action.eventType === 'SUB_NEW' ? '⭐ Sub' : '🎁 Gifts';
+      const evtBadge = action.eventType === 'CHAT' ? '<span class="badge bg-secondary">💬 Chat</span>' 
+                   : action.eventType === 'SUB_NEW' ? '<span class="badge bg-primary">⭐ Sub</span>' 
+                   : '<span class="badge bg-info text-dark">🎁 Gifts</span>';
+                   
       let pl = '';
       try {
         const parsed = JSON.parse(action.payload);
@@ -338,18 +388,21 @@ async function loadActions(serverId) {
       } catch (e) {}
 
       tr.innerHTML = `
-        <td style="padding: 0.5rem;">${evtBadge}</td>
-        <td style="padding: 0.5rem; color: var(--primary);">${action.condition || '-'}</td>
-        <td style="padding: 0.5rem;">${action.actionType}<br><span style="color: var(--text-muted); font-size: 0.75rem;">${pl}</span></td>
-        <td style="padding: 0.5rem; text-align: right;">
-          <button onclick="deleteAction('${serverId}', '${action.id}')" style="background: transparent; color: var(--error); border: none; cursor: pointer;">❌</button>
+        <td>${evtBadge}</td>
+        <td class="fw-semibold text-primary">${action.condition || '-'}</td>
+        <td>
+          <div class="fw-bold">${action.actionType}</div>
+          <div class="small text-muted">${pl}</div>
+        </td>
+        <td class="text-end">
+          <button onclick="deleteAction('${serverId}', '${action.id}')" class="btn btn-outline-danger btn-sm" title="Delete">❌</button>
         </td>
       `;
       tbody.appendChild(tr);
     });
   } catch (err) {
     console.error('Failed to load actions', err);
-    tbody.innerHTML = '<tr><td colspan="4">Error loading actions.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error loading actions.</td></tr>';
   }
 }
 
@@ -360,7 +413,12 @@ async function handleAddAction(e) {
   const actionType = document.getElementById('action-action-type').value;
   let condition = document.getElementById('action-condition').value;
   
-  if (eventType === 'SUB_NEW') condition = null;
+  if (eventType === 'SUB_NEW') {
+    condition = null;
+  } else if (eventType === 'SUB_GIFT') {
+    const op = document.getElementById('action-condition-operator').value;
+    condition = op + condition;
+  }
 
   let payload = {};
   if (actionType === 'SPAWN_MOB') {
