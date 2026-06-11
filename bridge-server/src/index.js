@@ -182,7 +182,10 @@ app.get('/api/kick/callback', async (req, res) => {
       body: JSON.stringify({
         method: 'webhook',
         events: [
-          { name: 'chat.message.sent', version: 1 }
+          { name: 'chat.message.sent', version: 1 },
+          { name: 'channel.subscription.new', version: 1 },
+          { name: 'channel.subscription.renewal', version: 1 },
+          { name: 'channel.subscription.gifts', version: 1 }
         ]
       })
     });
@@ -230,24 +233,25 @@ app.post('/api/webhooks/kick', async (req, res) => {
   console.log(`[Webhook] Received event:`, req.headers['kick-event-type']);
 
   try {
-    if (req.headers['kick-event-type'] === 'chat.message.sent') {
+    const eventType = req.headers['kick-event-type'];
+    const broadcasterObj = event.broadcaster || event.streamer || event.channel;
+    const streamerTarget = broadcasterObj?.slug || broadcasterObj?.username;
+      
+    if (!streamerTarget) return res.status(200).send('OK');
+
+    // Find the Server associated with this channel
+    const dbServer = await prisma.server.findFirst({
+      where: { kickChannel: streamerTarget.toLowerCase() }
+    });
+
+    if (!dbServer) {
+       console.warn(`[Webhook] Received event for unlinked channel ${streamerTarget}`);
+       return res.status(200).send('OK');
+    }
+
+    if (eventType === 'chat.message.sent') {
       const messageText = event.content;
       const sender = event.sender.username;
-
-      const broadcasterObj = event.broadcaster || event.streamer || event.channel;
-      const streamerTarget = broadcasterObj?.slug || broadcasterObj?.username;
-      
-      if (!streamerTarget) return res.status(200).send('OK');
-
-      // Find the Server associated with this channel
-      const dbServer = await prisma.server.findFirst({
-        where: { kickChannel: streamerTarget.toLowerCase() }
-      });
-
-      if (!dbServer) {
-         console.warn(`[Webhook] Received event for unlinked channel ${streamerTarget}`);
-         return res.status(200).send('OK');
-      }
 
       const claimMatch = messageText.match(/KICK-[A-Z0-9]{4}/) || messageText.match(/^[A-Z0-9]{6}$/);
       if (claimMatch) {
@@ -276,6 +280,32 @@ app.post('/api/webhooks/kick', async (req, res) => {
           });
         }
       }
+    } else if (eventType === 'channel.subscription.new' || eventType === 'channel.subscription.renewal') {
+      const subscriberUsername = event.subscriber?.username;
+      if (subscriberUsername) {
+        await prisma.linkedUser.updateMany({
+          where: { kickUsername: subscriberUsername, serverId: dbServer.id },
+          data: { isSubscriber: true }
+        });
+      }
+      wsManager.routeToServer(dbServer.id, {
+        type: 'subscription_event',
+        subType: eventType,
+        data: { username: subscriberUsername }
+      });
+    } else if (eventType === 'channel.subscription.gifts') {
+      if (event.giftees && Array.isArray(event.giftees)) {
+        const gifteeUsernames = event.giftees.map(g => g.username);
+        await prisma.linkedUser.updateMany({
+          where: { kickUsername: { in: gifteeUsernames }, serverId: dbServer.id },
+          data: { isSubscriber: true }
+        });
+      }
+      wsManager.routeToServer(dbServer.id, {
+        type: 'subscription_event',
+        subType: eventType,
+        data: { count: event.giftees ? event.giftees.length : 0 }
+      });
     }
 
     res.status(200).send('OK');

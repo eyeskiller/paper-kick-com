@@ -37,22 +37,20 @@ public class ActionHandler {
             giftedCount = eventData.get("count").getAsInt();
         }
 
-        if (subType.equals("kicks.gifted") || subType.equals("channel.subscription.new")) {
-            if (giftedCount >= 5) {
-                // Drop hotbar
-                for (int i = 0; i < 9; i++) {
-                    ItemStack item = streamer.getInventory().getItem(i);
-                    if (item != null && !item.getType().isAir()) {
-                        streamer.getWorld().dropItemNaturally(streamer.getLocation(), item);
-                        streamer.getInventory().setItem(i, null);
-                    }
+        if (subType.equals("channel.subscription.gifts") && giftedCount >= 5) {
+            // Drop hotbar
+            for (int i = 0; i < 9; i++) {
+                ItemStack item = streamer.getInventory().getItem(i);
+                if (item != null && !item.getType().isAir()) {
+                    streamer.getWorld().dropItemNaturally(streamer.getLocation(), item);
+                    streamer.getInventory().setItem(i, null);
                 }
-                streamer.sendMessage("§cWoah! 5 gifted subs! You dropped your hotbar!");
-            } else {
-                // Spawn a creeper
-                streamer.getWorld().spawnEntity(streamer.getLocation(), EntityType.CREEPER);
-                streamer.sendMessage("§aSomeone subscribed! A Creeper spawned!");
             }
+            streamer.sendMessage("§cWoah! 5 or more gifted subs! You dropped your hotbar!");
+        } else if (subType.equals("channel.subscription.new") || subType.equals("channel.subscription.renewal")) {
+            // Spawn a creeper
+            streamer.getWorld().spawnEntity(streamer.getLocation(), EntityType.CREEPER);
+            streamer.sendMessage("§aSomeone subscribed! A Creeper spawned!");
         }
     }
 }
