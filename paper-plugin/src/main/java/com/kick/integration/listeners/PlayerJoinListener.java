@@ -29,6 +29,9 @@ public class PlayerJoinListener implements Listener {
         if (apiUrl != null && apiUrl.endsWith("/")) {
             apiUrl = apiUrl.substring(0, apiUrl.length() - 1);
         }
+        if (apiUrl != null && !apiUrl.endsWith("/api/kick")) {
+            apiUrl += "/api/kick";
+        }
         final String finalApiUrl = apiUrl;
         
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
