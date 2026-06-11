@@ -26,10 +26,16 @@ public class PlayerJoinListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         String apiUrl = plugin.getConfig().getString("bridge.api-url", "http://164.90.227.96:8811/api/kick");
+        if (apiUrl != null && apiUrl.endsWith("/")) {
+            apiUrl = apiUrl.substring(0, apiUrl.length() - 1);
+        }
+        final String finalApiUrl = apiUrl;
         
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
-                URL url = new URL(apiUrl + "/status/" + player.getUniqueId());
+                URL url = new URL(finalApiUrl + "/status/" + player.getUniqueId());
+                plugin.getLogger().info("Fetching player status from: " + url.toString());
+                
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 
