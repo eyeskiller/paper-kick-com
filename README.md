@@ -8,7 +8,7 @@ You can configure what happens in-game through our beautiful Web UI!
 
 Don't want to deal with setting up databases, reverse proxies, and Node.js servers?
 
-We offer a **fully managed SaaS platform** for only **$1.99 / month**!
+We offer a **fully managed SaaS platform** for only **€1.99 / month**!
 - No port forwarding or VPS needed.
 - Beautiful web dashboard to manage your Kick Actions.
 - Instant connection to your Minecraft server.
