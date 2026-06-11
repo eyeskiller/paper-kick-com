@@ -20,28 +20,38 @@
         to your Minecraft server. Let your viewers claim their accounts and interact with your game in real-time using
         Kick's official Webhook API.</p>
 
-      <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem;">
-        <div style="border: 1px solid var(--primary); padding: 1rem; flex: 1; text-transform: uppercase;">
-          <h3 style="color: var(--primary);">Secure</h3>
-          <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">RSA Signature Verification
-            prevents spoofing.</p>
+      <div style="display: flex; gap: 2rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap;">
+        <!-- Open Source Option -->
+        <div style="border: 1px solid var(--panel-border); background: var(--panel-bg); padding: 2rem; flex: 1; min-width: 300px; text-align: left;">
+          <h3 style="color: var(--text); font-size: 1.5rem; margin-bottom: 0.5rem;">Open Source</h3>
+          <p style="font-size: 1.5rem; font-weight: bold; color: var(--text); margin-bottom: 1rem;">Free Forever</p>
+          <ul style="list-style: none; padding: 0; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 2rem;">
+            <li>✓ Self-host on your own VPS</li>
+            <li>✓ Setup your own Webhooks & SSL</li>
+            <li>✓ Full access to source code</li>
+            <li>✓ Manage your own Node.js server</li>
+          </ul>
+          <a href="https://github.com/eyeskiller/paper-kick-com" target="_blank" class="secondary-btn" style="display: block; text-align: center; text-decoration: none;">View GitHub Repo</a>
         </div>
-        <div style="border: 1px solid var(--primary); padding: 1rem; flex: 1; text-transform: uppercase;">
-          <h3 style="color: var(--primary);">Real-time</h3>
-          <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">WebSockets deliver instant claim
-            success.</p>
-        </div>
-        <div style="border: 1px solid var(--primary); padding: 1rem; flex: 1; text-transform: uppercase;">
-          <h3 style="color: var(--primary);">Customizable</h3>
-          <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">Bring your own Kick Developer
-            credentials.</p>
+
+        <!-- SaaS Option -->
+        <div style="border: 1px solid var(--primary); background: var(--panel-bg); padding: 2rem; flex: 1; min-width: 300px; text-align: left; position: relative;">
+          <div style="position: absolute; top: -12px; right: 20px; background: var(--primary); color: #000; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: bold; text-transform: uppercase;">Recommended</div>
+          <h3 style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;">Hosted Bridge</h3>
+          <p style="font-size: 1.5rem; font-weight: bold; color: var(--text); margin-bottom: 1rem;">$1.99 <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted);">/ month</span></p>
+          <ul style="list-style: none; padding: 0; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 2rem;">
+            <li>✓ 1-Click Minecraft connection</li>
+            <li>✓ No VPS or coding required</li>
+            <li>✓ Web Dashboard for Kick Actions</li>
+            <li>✓ Automatic updates & 24/7 uptime</li>
+          </ul>
+          <button onclick="showAuthView('register')" class="primary-btn" style="width: 100%;">Start Free Trial</button>
         </div>
       </div>
 
-      <button onclick="showAuthView('register')" class="primary-btn" style="max-width: 200px; font-size: 1.1rem;">Get
-        Started Free</button>
-      <button onclick="showAuthView('login')" class="secondary-btn"
-        style="max-width: 200px; font-size: 1.1rem; margin-left: 1rem;">Login</button>
+      <div style="margin-top: 2rem; font-size: 0.9rem; color: var(--text-muted);">
+        Already have an account? <a href="#" onclick="showAuthView('login'); return false;" style="color: var(--primary);">Login here</a>
+      </div>
     </div>
   </div>
 
