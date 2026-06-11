@@ -26,7 +26,11 @@ sudo dnf install -y git nginx
 
 # Install Node.js (Enable the Node.js 20 module if available)
 sudo dnf module enable nodejs:20 -y
-sudo dnf install -y nodejs npm
+sudo dnf install -y nodejs
+
+# Note: If you encounter an error about "npm" conflicting with "nodejs", it means 
+# NodeSource is already installed on your system. In that case, NodeSource bundles 
+# npm automatically, so simply running `sudo dnf install -y nodejs` is enough.
 ```
 
 ## 3. Clone and Setup the Project
