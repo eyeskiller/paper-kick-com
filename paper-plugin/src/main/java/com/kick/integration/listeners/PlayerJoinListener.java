@@ -44,14 +44,18 @@ public class PlayerJoinListener implements Listener {
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             if (isSub) {
                                 player.setPlayerListName("§d[KICK SUB] §r" + player.getName());
+                                plugin.getLogger().info("Applied KICK SUB prefix to " + player.getName());
                             } else {
                                 player.setPlayerListName("§a[KICK] §r" + player.getName());
+                                plugin.getLogger().info("Applied KICK prefix to " + player.getName());
                             }
                         });
                     }
+                } else {
+                    plugin.getLogger().warning("HTTP Request failed with code: " + conn.getResponseCode());
                 }
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to fetch player status for " + player.getName());
+                plugin.getLogger().log(java.util.logging.Level.WARNING, "Failed to fetch player status for " + player.getName(), e);
             }
         });
     }

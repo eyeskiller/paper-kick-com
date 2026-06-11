@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.kick.integration"
-version = "1.0.5"
+version = "1.0.6"
 description = "Kick.com Integration for Paper Minecraft Server"
 
 java {

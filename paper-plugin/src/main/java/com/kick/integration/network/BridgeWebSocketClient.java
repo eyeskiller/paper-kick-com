@@ -48,12 +48,29 @@ public class BridgeWebSocketClient extends WebSocketClient {
                     case "claim_success":
                         String kickUsername = data.get("kickUsername").getAsString();
                         String uuidStr = data.get("minecraftUuid").getAsString();
-                        plugin.getLogger().info("Player linked Kick account: " + kickUsername);
+                        boolean isSub = data.has("isSubscriber") && data.get("isSubscriber").getAsBoolean();
+                        plugin.getLogger().info("Player linked Kick account: " + kickUsername + " (Sub: " + isSub + ")");
                         
                         org.bukkit.entity.Player p = Bukkit.getPlayer(java.util.UUID.fromString(uuidStr));
                         if (p != null) {
-                            p.setPlayerListName("§a[KICK] §r" + p.getName());
+                            if (isSub) {
+                                p.setPlayerListName("§d[KICK SUB] §r" + p.getName());
+                            } else {
+                                p.setPlayerListName("§a[KICK] §r" + p.getName());
+                            }
                             p.sendMessage("§aYou have successfully linked your Kick account (" + kickUsername + ")!");
+                        }
+                        break;
+                    case "subscription_update":
+                        String targetUuid = data.get("minecraftUuid").getAsString();
+                        boolean isTargetSub = data.get("isSubscriber").getAsBoolean();
+                        org.bukkit.entity.Player target = Bukkit.getPlayer(java.util.UUID.fromString(targetUuid));
+                        if (target != null) {
+                            if (isTargetSub) {
+                                target.setPlayerListName("§d[KICK SUB] §r" + target.getName());
+                            } else {
+                                target.setPlayerListName("§a[KICK] §r" + target.getName());
+                            }
                         }
                         break;
                     case "subscription_event":

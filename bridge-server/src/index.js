@@ -278,7 +278,7 @@ app.post('/api/webhooks/kick', async (req, res) => {
         if (claim && claim.expiresAt > new Date() && claim.serverId === dbServer.id) {
           console.log(`[Claim] Valid code ${code} for ${sender} -> ${claim.minecraftUuid}`);
           
-          await prisma.linkedUser.upsert({
+          const newUser = await prisma.linkedUser.upsert({
             where: { minecraftUuid: claim.minecraftUuid },
             update: { kickUsername: sender, serverId: dbServer.id },
             create: {
@@ -293,17 +293,26 @@ app.post('/api/webhooks/kick', async (req, res) => {
           wsManager.routeToServer(dbServer.id, {
             type: 'claim_success',
             minecraftUuid: claim.minecraftUuid,
-            kickUsername: sender
+            kickUsername: sender,
+            isSubscriber: newUser.isSubscriber
           });
         }
       }
     } else if (eventType === 'channel.subscription.new' || eventType === 'channel.subscription.renewal') {
       const subscriberUsername = event.subscriber?.username;
       if (subscriberUsername) {
-        await prisma.linkedUser.updateMany({
-          where: { kickUsername: subscriberUsername, serverId: dbServer.id },
-          data: { isSubscriber: true }
-        });
+        const user = await prisma.linkedUser.findFirst({ where: { kickUsername: subscriberUsername, serverId: dbServer.id } });
+        if (user) {
+          await prisma.linkedUser.updateMany({
+            where: { kickUsername: subscriberUsername, serverId: dbServer.id },
+            data: { isSubscriber: true }
+          });
+          wsManager.routeToServer(dbServer.id, {
+            type: 'subscription_update',
+            minecraftUuid: user.minecraftUuid,
+            isSubscriber: true
+          });
+        }
       }
       if (dbServer.eventsEnabled) {
         wsManager.routeToServer(dbServer.id, {
@@ -315,10 +324,22 @@ app.post('/api/webhooks/kick', async (req, res) => {
     } else if (eventType === 'channel.subscription.gifts') {
       if (event.giftees && Array.isArray(event.giftees)) {
         const gifteeUsernames = event.giftees.map(g => g.username);
+        const giftees = await prisma.linkedUser.findMany({
+          where: { kickUsername: { in: gifteeUsernames }, serverId: dbServer.id }
+        });
+        
         await prisma.linkedUser.updateMany({
           where: { kickUsername: { in: gifteeUsernames }, serverId: dbServer.id },
           data: { isSubscriber: true }
         });
+        
+        for (const giftee of giftees) {
+          wsManager.routeToServer(dbServer.id, {
+            type: 'subscription_update',
+            minecraftUuid: giftee.minecraftUuid,
+            isSubscriber: true
+          });
+        }
       }
       if (dbServer.eventsEnabled) {
         wsManager.routeToServer(dbServer.id, {
