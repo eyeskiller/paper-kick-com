@@ -104,7 +104,10 @@ async function loadServers() {
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 1rem;">
-          <span style="font-size: 0.875rem; color: var(--text-muted);">👥 ${server._count.linkedUsers} linked players</span>
+          <div>
+            <span style="font-size: 0.875rem; color: var(--text-muted); display: block;">👥 ${server._count.linkedUsers} linked players</span>
+            <button onclick="viewPlayers('${server.id}', '${server.name}')" class="secondary-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-top: 0.25rem;">View Players</button>
+          </div>
           <a href="/api/kick/auth?serverId=${server.id}" target="_blank" class="secondary-btn" style="text-decoration: none;">
             ${isLinked ? 'Re-link Kick' : 'Link Kick Channel'}
           </a>
@@ -152,3 +155,42 @@ async function handleCreateServer(e) {
 
 // Initial check
 loadServers();
+
+async function viewPlayers(serverId, serverName) {
+  document.getElementById('players-modal-title').textContent = `Linked Players - ${serverName}`;
+  const tbody = document.getElementById('players-table-body');
+  tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center;">Loading...</td></tr>';
+  document.getElementById('players-modal').style.display = 'flex';
+
+  try {
+    const res = await fetch(`/api/dashboard/servers/${serverId}/users`);
+    if (!res.ok) throw new Error('Failed to fetch players');
+    const users = await res.json();
+
+    tbody.innerHTML = '';
+    if (users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">No linked players found.</td></tr>';
+      return;
+    }
+
+    users.forEach(u => {
+      const subBadge = u.isSubscriber 
+        ? '<span style="background: rgba(139,92,246,0.2); color: #8b5cf6; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Yes</span>' 
+        : '<span style="color: var(--text-muted); font-size: 0.75rem;">No</span>';
+        
+      tbody.innerHTML += `
+        <tr style="border-bottom: 1px solid var(--panel-border);">
+          <td style="padding: 0.75rem;">${u.kickUsername}</td>
+          <td style="padding: 0.75rem; font-family: monospace; font-size: 0.8rem;">${u.minecraftUuid}</td>
+          <td style="padding: 0.75rem;">${subBadge}</td>
+        </tr>
+      `;
+    });
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--error);">${err.message}</td></tr>`;
+  }
+}
+
+function closePlayersModal() {
+  document.getElementById('players-modal').style.display = 'none';
+}
