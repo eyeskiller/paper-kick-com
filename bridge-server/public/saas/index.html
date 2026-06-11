@@ -19,6 +19,16 @@
       font-family: 'Inter', sans-serif;
     }
 
+    /* Fix contrast for text-primary on light backgrounds */
+    .text-primary {
+      color: #179300 !important;
+    }
+
+    /* Fix contrast for bg-primary text */
+    .bg-primary {
+      color: #000 !important;
+    }
+
     .btn-primary {
       background-color: var(--bs-primary);
       border-color: var(--bs-primary);
@@ -33,12 +43,13 @@
     }
 
     .btn-outline-primary {
-      color: var(--bs-primary);
-      border-color: var(--bs-primary);
+      color: #179300;
+      border-color: #179300;
     }
     
     .btn-outline-primary:hover {
       background-color: var(--bs-primary);
+      border-color: var(--bs-primary);
       color: #000;
     }
 
