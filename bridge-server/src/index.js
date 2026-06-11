@@ -112,8 +112,12 @@ app.get('/api/kick/callback', async (req, res) => {
   }
 });
 
-const pusher = new Pusher('eb1d5f283081a78b932c', { cluster: 'us2' });
+const pusher = new Pusher('eb1d5f283081a78b932c', { cluster: 'us2', forceTLS: true });
 const subscribedChannels = new Set();
+
+pusher.connection.bind('state_change', (states) => {
+  console.log(`[Pusher State] ${states.previous} -> ${states.current}`);
+});
 
 wsManager.onClientAuth(async (streamerSlug, chatroomId) => {
   if (subscribedChannels.has(streamerSlug)) return;
@@ -125,9 +129,27 @@ wsManager.onClientAuth(async (streamerSlug, chatroomId) => {
     console.log(`[Pusher] Subscribing to chatroom ${chatroomId} for streamer ${streamerSlug}`);
     const channel = pusher.subscribe(`chatrooms.${chatroomId}.v2`);
 
-    channel.bind('App\\Events\\ChatMessageEvent', async (eventData) => {
-      const messageText = eventData.content;
-      const sender = eventData.sender.username;
+    channel.bind_global((eventName, data) => {
+      // Only log chat messages if they match our code format to avoid spamming the log
+      // But log all other events
+      if (eventName.includes('ChatMessage') && typeof data === 'string' && !data.includes('KICK-')) return;
+      if (eventName.includes('ChatMessage') && typeof data === 'object' && data.message && !data.message.content.includes('KICK-')) return;
+      console.log(`[Pusher Event] ${eventName}:`, JSON.stringify(data).substring(0, 300));
+    });
+
+    channel.bind('App\\Events\\ChatMessageEvent', handleChatMessage);
+    channel.bind('App\\Events\\ChatMessageSentEvent', handleChatMessage);
+
+    async function handleChatMessage(eventData) {
+      try {
+        // Pusher data might be a JSON string or already parsed
+        const data = typeof eventData === 'string' ? JSON.parse(eventData) : eventData;
+        
+        // Handle both older and newer Kick payload structures
+        const messageText = data.message ? data.message.content : data.content;
+        const sender = data.message ? data.message.sender.username : data.sender.username;
+
+        if (!messageText || !sender) return;
 
       const claimMatch = messageText.match(/KICK-[A-Z0-9]{4}/) || messageText.match(/^[A-Z0-9]{6}$/);
       if (claimMatch) {
@@ -155,7 +177,10 @@ wsManager.onClientAuth(async (streamerSlug, chatroomId) => {
           });
         }
       }
-    });
+    } catch (err) {
+      console.error('[Pusher] Error handling chat message:', err.message);
+    }
+  }
 
     channel.bind('App\\Events\\SubscriptionEvent', (eventData) => {
       wsManager.routeToStreamer(streamerSlug, {
