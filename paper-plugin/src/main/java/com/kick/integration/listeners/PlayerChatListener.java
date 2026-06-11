@@ -8,18 +8,23 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 public class PlayerChatListener implements Listener {
 
+    private final com.kick.integration.KickIntegrationPlugin plugin;
+
+    public PlayerChatListener(com.kick.integration.KickIntegrationPlugin plugin) {
+        this.plugin = plugin;
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
-        String listName = player.getPlayerListName();
         
-        // Ensure the prefix is dynamically added to whatever the current format is
-        if (listName != null) {
-            if (listName.contains("[KICK SUB]")) {
-                event.setFormat("§d[KICK SUB]§r " + event.getFormat());
-            } else if (listName.contains("[KICK]")) {
-                event.setFormat("§a[KICK]§r " + event.getFormat());
-            }
+        boolean isLinked = plugin.isUserLinked(player.getUniqueId());
+        boolean isSub = plugin.isUserSubscribed(player.getUniqueId());
+        
+        if (isSub) {
+            event.setFormat("§d[KICK SUB]§r " + event.getFormat());
+        } else if (isLinked) {
+            event.setFormat("§a[KICK]§r " + event.getFormat());
         }
     }
 }

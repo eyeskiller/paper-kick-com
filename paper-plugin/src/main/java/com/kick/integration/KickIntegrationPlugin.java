@@ -11,6 +11,8 @@ import java.net.URISyntaxException;
 public class KickIntegrationPlugin extends JavaPlugin {
 
     private BridgeWebSocketClient webSocketClient;
+    private final java.util.Map<java.util.UUID, Boolean> linkedUsers = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<java.util.UUID, Boolean> subscribedUsers = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Override
     public void onEnable() {
@@ -28,7 +30,7 @@ public class KickIntegrationPlugin extends JavaPlugin {
 
         getCommand("kick").setExecutor(new KickCommandExecutor(this));
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
-        getServer().getPluginManager().registerEvents(new com.kick.integration.listeners.PlayerChatListener(), this);
+        getServer().getPluginManager().registerEvents(new com.kick.integration.listeners.PlayerChatListener(this), this);
 
         getLogger().info("KickIntegrationPlugin enabled!");
     }
@@ -43,5 +45,21 @@ public class KickIntegrationPlugin extends JavaPlugin {
 
     public BridgeWebSocketClient getWebSocketClient() {
         return webSocketClient;
+    }
+
+    public boolean isUserLinked(java.util.UUID uuid) {
+        return linkedUsers.getOrDefault(uuid, false);
+    }
+
+    public void setUserLinked(java.util.UUID uuid, boolean linked) {
+        linkedUsers.put(uuid, linked);
+    }
+
+    public boolean isUserSubscribed(java.util.UUID uuid) {
+        return subscribedUsers.getOrDefault(uuid, false);
+    }
+
+    public void setUserSubscribed(java.util.UUID uuid, boolean subbed) {
+        subscribedUsers.put(uuid, subbed);
     }
 }

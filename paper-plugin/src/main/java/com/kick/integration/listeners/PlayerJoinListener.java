@@ -40,8 +40,11 @@ public class PlayerJoinListener implements Listener {
                     
                     if (response.has("linked") && response.get("linked").getAsBoolean()) {
                         boolean isSub = response.has("isSubscriber") && response.get("isSubscriber").getAsBoolean();
-                        // Run on main thread to apply prefix
-                        Bukkit.getScheduler().runTask(plugin, () -> {
+                        // Run on main thread to apply prefix with a slight delay
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            plugin.setUserLinked(player.getUniqueId(), true);
+                            plugin.setUserSubscribed(player.getUniqueId(), isSub);
+
                             if (isSub) {
                                 player.setPlayerListName("§d[KICK SUB] §r" + player.getName());
                                 plugin.getLogger().info("Applied KICK SUB prefix to " + player.getName());
@@ -49,7 +52,7 @@ public class PlayerJoinListener implements Listener {
                                 player.setPlayerListName("§a[KICK] §r" + player.getName());
                                 plugin.getLogger().info("Applied KICK prefix to " + player.getName());
                             }
-                        });
+                        }, 20L); // 1 second delay
                     }
                 } else {
                     plugin.getLogger().warning("HTTP Request failed with code: " + conn.getResponseCode());

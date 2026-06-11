@@ -53,6 +53,9 @@ public class BridgeWebSocketClient extends WebSocketClient {
                         
                         org.bukkit.entity.Player p = Bukkit.getPlayer(java.util.UUID.fromString(uuidStr));
                         if (p != null) {
+                            plugin.setUserLinked(p.getUniqueId(), true);
+                            plugin.setUserSubscribed(p.getUniqueId(), isSub);
+
                             if (isSub) {
                                 p.setPlayerListName("§d[KICK SUB] §r" + p.getName());
                             } else {
@@ -66,6 +69,8 @@ public class BridgeWebSocketClient extends WebSocketClient {
                         boolean isTargetSub = data.get("isSubscriber").getAsBoolean();
                         org.bukkit.entity.Player target = Bukkit.getPlayer(java.util.UUID.fromString(targetUuid));
                         if (target != null) {
+                            plugin.setUserSubscribed(target.getUniqueId(), isTargetSub);
+                            
                             if (isTargetSub) {
                                 target.setPlayerListName("§d[KICK SUB] §r" + target.getName());
                             } else {
