@@ -64,7 +64,7 @@ async function fetchKickPublicKey() {
     // Some endpoints return JSON with the key, others return plain text. Handle both.
     try {
       const json = JSON.parse(data);
-      kickPublicKey = json.public_key || json.key || data;
+      kickPublicKey = json?.data?.public_key || json.public_key || json.key || data;
     } catch {
       kickPublicKey = data;
     }
