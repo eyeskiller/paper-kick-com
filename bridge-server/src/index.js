@@ -280,6 +280,11 @@ app.post('/api/webhooks/kick', async (req, res) => {
       const messageText = event.content;
       const sender = event.sender.username;
 
+      let isSubscriber = false;
+      if (event.sender.identity && Array.isArray(event.sender.identity.badges)) {
+        isSubscriber = event.sender.identity.badges.some(b => b.type === 'subscriber' || b.type === 'founder');
+      }
+
       const claimMatch = messageText.match(/KICK-[A-Z0-9]{4}/) || messageText.match(/^[A-Z0-9]{6}$/);
       if (claimMatch) {
         const code = claimMatch[0];
@@ -290,11 +295,12 @@ app.post('/api/webhooks/kick', async (req, res) => {
           
           const newUser = await prisma.linkedUser.upsert({
             where: { minecraftUuid: claim.minecraftUuid },
-            update: { kickUsername: sender, serverId: dbServer.id },
+            update: { kickUsername: sender, serverId: dbServer.id, isSubscriber },
             create: {
               minecraftUuid: claim.minecraftUuid,
               kickUsername: sender,
-              serverId: dbServer.id
+              serverId: dbServer.id,
+              isSubscriber
             }
           });
 
@@ -305,6 +311,23 @@ app.post('/api/webhooks/kick', async (req, res) => {
             minecraftUuid: claim.minecraftUuid,
             kickUsername: sender,
             isSubscriber: newUser.isSubscriber
+          });
+        }
+      } else {
+        // Passively sync subscription status if an already linked user chats
+        const existingUser = await prisma.linkedUser.findFirst({
+          where: { kickUsername: sender, serverId: dbServer.id }
+        });
+        
+        if (existingUser && existingUser.isSubscriber !== isSubscriber) {
+          await prisma.linkedUser.update({
+            where: { minecraftUuid: existingUser.minecraftUuid },
+            data: { isSubscriber }
+          });
+          wsManager.routeToServer(dbServer.id, {
+            type: 'subscription_update',
+            minecraftUuid: existingUser.minecraftUuid,
+            isSubscriber
           });
         }
       }
