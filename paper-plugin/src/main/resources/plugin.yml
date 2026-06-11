@@ -1,5 +1,5 @@
 name: KickIntegration
-version: 1.0.9
+version: 1.1.0
 main: com.kick.integration.KickIntegrationPlugin
 api-version: "1.21"
 commands:
