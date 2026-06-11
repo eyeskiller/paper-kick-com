@@ -108,12 +108,32 @@ public class KickCommandExecutor implements CommandExecutor {
                 com.kick.integration.logic.ActionHandler.handleSubscriptionEvent(plugin, giftData);
                 sender.sendMessage("§aSimulated " + count + " gifted subs!");
                 break;
+            case "testchat":
+                if (!sender.hasPermission("kick.admin")) {
+                    sender.sendMessage("§cNo permission.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage("§cUsage: /kick testchat <message>");
+                    return true;
+                }
+                StringBuilder sb = new StringBuilder();
+                for (int i = 1; i < args.length; i++) {
+                    sb.append(args[i]).append(" ");
+                }
+                JsonObject chatData = new JsonObject();
+                chatData.addProperty("type", "chat_event");
+                chatData.addProperty("sender", "TestUser");
+                chatData.addProperty("content", sb.toString().trim());
+                com.kick.integration.logic.ActionHandler.handleChatEvent(plugin, chatData);
+                sender.sendMessage("§aSimulated chat message: " + sb.toString().trim());
+                break;
             case "status":
             case "unlink":
                 sender.sendMessage("§e" + args[0] + " command is a work in progress.");
                 break;
             default:
-                sender.sendMessage("§cUsage: /kick <claim|events|testsub|testgifts|unlink|status|reload>");
+                sender.sendMessage("§cUsage: /kick <claim|events|testsub|testgifts|testchat|unlink|status|reload>");
                 break;
         }
         return true;

@@ -298,6 +298,14 @@ app.post('/api/webhooks/kick', async (req, res) => {
           });
         }
       }
+
+      if (dbServer.eventsEnabled) {
+        wsManager.routeToServer(dbServer.id, {
+          type: 'chat_event',
+          sender: sender,
+          content: messageText
+        });
+      }
     } else if (eventType === 'channel.subscription.new' || eventType === 'channel.subscription.renewal') {
       const subscriberUsername = event.subscriber?.username;
       if (subscriberUsername) {

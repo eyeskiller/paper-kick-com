@@ -81,6 +81,9 @@ public class BridgeWebSocketClient extends WebSocketClient {
                     case "subscription_event":
                         ActionHandler.handleSubscriptionEvent(plugin, data);
                         break;
+                    case "chat_event":
+                        ActionHandler.handleChatEvent(plugin, data);
+                        break;
                 }
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, "Error handling message", e);
