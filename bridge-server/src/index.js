@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const crypto = require('crypto');
 const path = require('path');
+const Pusher = require('pusher-js');
 const { PrismaClient } = require('@prisma/client');
 const { setupWebSocket } = require('./websocketServer');
 
@@ -111,28 +112,29 @@ app.get('/api/kick/callback', async (req, res) => {
   }
 });
 
-app.post('/api/webhooks/kick', async (req, res) => {
-  const signature = req.headers['x-kick-signature'];
-  
-  if (process.env.KICK_WEBHOOK_SECRET && signature) {
-    const hmac = crypto.createHmac('sha256', process.env.KICK_WEBHOOK_SECRET);
-    const calculatedSignature = hmac.update(req.rawBody).digest('hex');
-    // Uncomment for prod:
-    // if (calculatedSignature !== signature) return res.status(401).send('Invalid signature');
-  }
+const pusher = new Pusher('eb1d5f283081a78b932c', { cluster: 'us2' });
+const subscribedChannels = new Set();
 
-  const event = req.body;
-  console.log(`[Webhook] Received event:`, event?.type);
+wsManager.onClientAuth(async (streamerSlug) => {
+  if (subscribedChannels.has(streamerSlug)) return;
+  subscribedChannels.add(streamerSlug);
 
   try {
-    if (event.type === 'chat.message.sent') {
-      const messageText = event.data.message;
-      const sender = event.data.sender.username;
+    const res = await fetch(`https://kick.com/api/v1/channels/${streamerSlug}`);
+    if (!res.ok) throw new Error('Channel not found on Kick API');
+    
+    const data = await res.json();
+    const chatroomId = data.chatroom.id;
+    
+    console.log(`[Pusher] Subscribing to chatroom ${chatroomId} for streamer ${streamerSlug}`);
+    const channel = pusher.subscribe(`chatrooms.${chatroomId}.v2`);
 
-      const streamerTarget = event.streamer?.slug || event.data?.channel?.slug || event.data?.streamer?.slug;
-      
+    channel.bind('App\\Events\\ChatMessageEvent', async (eventData) => {
+      const messageText = eventData.content;
+      const sender = eventData.sender.username;
+
       const claimMatch = messageText.match(/KICK-[A-Z0-9]{4}/) || messageText.match(/^[A-Z0-9]{6}$/);
-      if (claimMatch && streamerTarget) {
+      if (claimMatch) {
         const code = claimMatch[0];
         const claim = await prisma.claimCode.findUnique({ where: { code } });
         
@@ -150,30 +152,34 @@ app.post('/api/webhooks/kick', async (req, res) => {
 
           await prisma.claimCode.delete({ where: { code } });
 
-          wsManager.routeToStreamer(streamerTarget, {
+          wsManager.routeToStreamer(streamerSlug, {
             type: 'claim_success',
             minecraftUuid: claim.minecraftUuid,
             kickUsername: sender
           });
         }
       }
-    } else if (event.type === 'channel.subscription.new' || event.type === 'kicks.gifted') {
-      const streamerTarget = event.streamer?.slug || event.data?.channel?.slug || event.data?.streamer?.slug;
-      if (streamerTarget) {
-        wsManager.routeToStreamer(streamerTarget, {
-          type: 'subscription_event',
-          subType: event.type,
-          data: event.data
-        });
-      } else {
-        console.warn('[Webhook] Missing streamer target in subscription event payload!');
-      }
-    }
+    });
 
-    res.status(200).send('OK');
+    channel.bind('App\\Events\\SubscriptionEvent', (eventData) => {
+      wsManager.routeToStreamer(streamerSlug, {
+        type: 'subscription_event',
+        subType: 'channel.subscription.new',
+        data: eventData
+      });
+    });
+
+    channel.bind('App\\Events\\GiftedSubscriptionsEvent', (eventData) => {
+      wsManager.routeToStreamer(streamerSlug, {
+        type: 'subscription_event',
+        subType: 'kicks.gifted',
+        data: eventData
+      });
+    });
+
   } catch (err) {
-    console.error(`[Webhook] Error processing event:`, err);
-    res.status(500).send('Error');
+    console.error(`[Pusher] Failed to subscribe to ${streamerSlug}:`, err);
+    subscribedChannels.delete(streamerSlug);
   }
 });
 

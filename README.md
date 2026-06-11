@@ -30,7 +30,6 @@ Once created, you will receive a Client ID, Client Secret, and a Webhook Secret.
    ADMIN_PASSWORD="super_secret_password"
    KICK_CLIENT_ID="your_client_id"
    KICK_CLIENT_SECRET="your_client_secret"
-   KICK_WEBHOOK_SECRET="your_webhook_secret"
    ```
 4. Initialize the SQLite database by running:
    ```bash

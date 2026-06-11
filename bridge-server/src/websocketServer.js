@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 
 const clients = new Map();
 let claimCodeHandler = null;
+let clientAuthHandler = null;
 
 function setupWebSocket(server) {
   const wss = new WebSocket.Server({ server });
@@ -24,8 +25,9 @@ function setupWebSocket(server) {
               streamer: data.streamer.toLowerCase(),
               connectedAt: new Date().toISOString()
             });
-            console.log(`[WS] Client authenticated`);
+            console.log(`[WS] Client authenticated for streamer: ${data.streamer}`);
             ws.send(JSON.stringify({ type: 'auth_success' }));
+            if (clientAuthHandler) clientAuthHandler(data.streamer.toLowerCase());
           } else {
             console.log(`[WS] Authentication failed`);
             ws.close(1008, 'Unauthorized');
@@ -70,6 +72,9 @@ function setupWebSocket(server) {
     },
     getActiveConnections() {
       return Array.from(clients.values());
+    },
+    onClientAuth(handler) {
+      clientAuthHandler = handler;
     }
   };
 }
