@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const crypto = require('crypto');
+const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 const { setupWebSocket } = require('./websocketServer');
 
@@ -31,6 +32,28 @@ app.use(express.json({
     req.rawBody = buf.toString();
   }
 }));
+
+app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+
+app.get('/api/admin/stats', async (req, res) => {
+  const auth = req.headers.authorization;
+  if (!process.env.ADMIN_PASSWORD || auth !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const totalUsers = await prisma.linkedUser.count();
+    const activeConnections = wsManager.getActiveConnections();
+    
+    res.json({
+      totalUsers,
+      activeConnections,
+      uptime: process.uptime()
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
 
 app.get('/api/kick/auth', (req, res) => {
   const clientId = process.env.KICK_CLIENT_ID;

@@ -27,6 +27,7 @@ Once created, you will receive a Client ID, Client Secret, and a Webhook Secret.
    DATABASE_URL="file:./dev.db"
    PORT=8811
    WS_SECRET="change_me_in_production"
+   ADMIN_PASSWORD="super_secret_password"
    KICK_CLIENT_ID="your_client_id"
    KICK_CLIENT_SECRET="your_client_secret"
    KICK_WEBHOOK_SECRET="your_webhook_secret"
@@ -41,6 +42,9 @@ Start the server using:
 ```bash
 node src/index.js
 ```
+
+### Admin Control Panel
+The Bridge Server includes a built-in admin dashboard. You can access it by visiting `/admin` on your deployed URL (e.g., `https://kick.bechatbot.online/admin`). Log in using the `ADMIN_PASSWORD` you configured in your `.env` file to see live statistics and connected Minecraft servers.
 The server will start on port `8811`. Make sure your Nginx proxy maps `https://kick.bechatbot.online` to point to `localhost:8811` internally.
 
 ## 3. Paper Plugin Setup

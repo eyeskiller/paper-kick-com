@@ -1,13 +1,14 @@
 const WebSocket = require('ws');
 
-const clients = new Set();
+const clients = new Map();
 let claimCodeHandler = null;
 
 function setupWebSocket(server) {
   const wss = new WebSocket.Server({ server });
 
   wss.on('connection', (ws, req) => {
-    console.log(`[WS] New client connected: ${req.socket.remoteAddress}`);
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    console.log(`[WS] New client connected: ${ip}`);
     
     let authenticated = false;
 
@@ -18,7 +19,10 @@ function setupWebSocket(server) {
         if (!authenticated) {
           if (data.type === 'auth' && data.secret === process.env.WS_SECRET) {
             authenticated = true;
-            clients.add(ws);
+            clients.set(ws, {
+              ip: ip,
+              connectedAt: new Date().toISOString()
+            });
             console.log(`[WS] Client authenticated`);
             ws.send(JSON.stringify({ type: 'auth_success' }));
           } else {
@@ -48,7 +52,7 @@ function setupWebSocket(server) {
   return {
     broadcast(event) {
       const message = JSON.stringify(event);
-      for (const client of clients) {
+      for (const [client, meta] of clients.entries()) {
         if (client.readyState === WebSocket.OPEN) {
           client.send(message);
         }
@@ -56,6 +60,9 @@ function setupWebSocket(server) {
     },
     setClaimCodeHandler(handler) {
       claimCodeHandler = handler;
+    },
+    getActiveConnections() {
+      return Array.from(clients.values());
     }
   };
 }

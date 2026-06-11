@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kick Integration Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="login-screen" class="glass-panel active">
+        <h1>Admin Login</h1>
+        <p>Enter the admin password to access the control panel.</p>
+        <input type="password" id="admin-password" placeholder="Password" autocomplete="current-password">
+        <button id="login-btn">Login</button>
+        <p id="login-error" class="error"></p>
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <header>
+            <h1>Bridge Control Panel</h1>
+            <button id="logout-btn" class="outline">Logout</button>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card glass-panel">
+                <h3>Active Servers</h3>
+                <div id="stat-servers" class="stat-value pulse">0</div>
+            </div>
+            <div class="stat-card glass-panel">
+                <h3>Total Linked Users</h3>
+                <div id="stat-users" class="stat-value">0</div>
+            </div>
+            <div class="stat-card glass-panel">
+                <h3>Bridge Uptime</h3>
+                <div id="stat-uptime" class="stat-value">0s</div>
+            </div>
+        </div>
+
+        <div class="glass-panel list-panel">
+            <h2>Connected Minecraft Servers</h2>
+            <div class="table-container">
+                <table id="servers-table">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Connected At</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="servers-body">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
