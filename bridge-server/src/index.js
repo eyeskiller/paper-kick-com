@@ -98,6 +98,16 @@ async function fetchKickPublicKey() {
     } catch {
       kickPublicKey = data;
     }
+    
+    // Fix ERR_OSSL_UNSUPPORTED by ensuring standard PEM format
+    if (kickPublicKey && !kickPublicKey.includes('-----BEGIN')) {
+      // Remove any whitespace/newlines to create a clean base64 string
+      const cleanKey = kickPublicKey.replace(/\s+/g, '');
+      // Format into 64-character lines
+      const formattedKey = cleanKey.match(/.{1,64}/g).join('\n');
+      kickPublicKey = `-----BEGIN PUBLIC KEY-----\n${formattedKey}\n-----END PUBLIC KEY-----\n`;
+    }
+    
     console.log('[Webhook] Successfully fetched Kick Public Key for signature verification.');
   } catch (err) {
     console.error('[Webhook] Failed to fetch Kick Public Key. Webhooks will not be verified securely:', err.message);
