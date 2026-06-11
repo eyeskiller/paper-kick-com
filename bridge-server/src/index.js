@@ -55,18 +55,60 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
+const pkceVerifiers = new Map();
+
 app.get('/api/kick/auth', (req, res) => {
   const clientId = process.env.KICK_CLIENT_ID;
   const redirectUri = encodeURIComponent('https://kick.bechatbot.online/api/kick/callback');
-  const url = `https://kick.com/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=channel:read,chat:read`;
+  
+  const state = crypto.randomBytes(16).toString('hex');
+  const codeVerifier = crypto.randomBytes(32).toString('base64url');
+  const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+  
+  pkceVerifiers.set(state, codeVerifier);
+
+  const scope = encodeURIComponent('user:read channel:read chat:write events:subscribe');
+  const url = `https://id.kick.com/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+  
   res.redirect(url);
 });
 
 app.get('/api/kick/callback', async (req, res) => {
-  const { code } = req.query;
-  if (!code) return res.status(400).send('No code provided');
-  console.log(`[OAuth] Received code: ${code}`);
-  res.send('OAuth flow complete. You can close this window.');
+  const { code, state } = req.query;
+  if (!code || !state) return res.status(400).send('Missing code or state');
+  
+  const codeVerifier = pkceVerifiers.get(state);
+  if (!codeVerifier) return res.status(400).send('Invalid state or expired session');
+  pkceVerifiers.delete(state);
+
+  try {
+    const tokenResponse = await fetch('https://id.kick.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: process.env.KICK_CLIENT_ID,
+        client_secret: process.env.KICK_CLIENT_SECRET,
+        redirect_uri: 'https://kick.bechatbot.online/api/kick/callback',
+        code: code,
+        code_verifier: codeVerifier
+      })
+    });
+
+    const tokenData = await tokenResponse.json();
+    if (!tokenResponse.ok) {
+      console.error('[OAuth] Token error:', tokenData);
+      return res.status(400).send('Failed to obtain token from Kick. Check server logs.');
+    }
+
+    console.log('[OAuth] Successfully obtained access token for user!');
+    res.send('Authorization successful! You can close this window. Kick webhooks are now enabled for your channel.');
+  } catch (err) {
+    console.error('[OAuth] Exception:', err);
+    res.status(500).send('Internal Server Error during Kick authorization.');
+  }
 });
 
 app.post('/api/webhooks/kick', async (req, res) => {
