@@ -33,7 +33,7 @@ public class PlayerJoinListener implements Listener {
         
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
-                URL url = new URL(finalApiUrl + "/status/" + player.getUniqueId());
+                URL url = new java.net.URI(finalApiUrl + "/status/" + player.getUniqueId()).toURL();
                 plugin.getLogger().info("Fetching player status from: " + url.toString());
                 
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
