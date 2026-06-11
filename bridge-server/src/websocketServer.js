@@ -2,9 +2,8 @@ const WebSocket = require('ws');
 
 const clients = new Map();
 let claimCodeHandler = null;
-let clientAuthHandler = null;
 
-function setupWebSocket(server) {
+function setupWebSocket(server, prisma) {
   const wss = new WebSocket.Server({ server });
 
   wss.on('connection', (ws, req) => {
@@ -12,25 +11,34 @@ function setupWebSocket(server) {
     console.log(`[WS] New client connected: ${ip}`);
     
     let authenticated = false;
+    let serverId = null;
 
     ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message);
         
         if (!authenticated) {
-          if (data.type === 'auth' && data.secret === process.env.WS_SECRET && data.streamer) {
-            authenticated = true;
-            clients.set(ws, {
-              ip: ip,
-              streamer: data.streamer.toLowerCase(),
-              chatroomId: data.chatroomId,
-              connectedAt: new Date().toISOString()
-            });
-            console.log(`[WS] Client authenticated for streamer: ${data.streamer} with chatroomId: ${data.chatroomId}`);
-            ws.send(JSON.stringify({ type: 'auth_success' }));
-            if (clientAuthHandler) clientAuthHandler(data.streamer.toLowerCase(), data.chatroomId);
+          if (data.type === 'auth' && data.apiKey) {
+            // Find server by API key
+            const dbServer = await prisma.server.findUnique({ where: { apiKey: data.apiKey } });
+            if (dbServer) {
+              authenticated = true;
+              serverId = dbServer.id;
+              
+              clients.set(ws, {
+                ip: ip,
+                serverId: serverId,
+                connectedAt: new Date().toISOString()
+              });
+              
+              console.log(`[WS] Client authenticated for Server: ${dbServer.name} (${serverId})`);
+              ws.send(JSON.stringify({ type: 'auth_success' }));
+            } else {
+              console.log(`[WS] Authentication failed: Invalid API Key`);
+              ws.close(1008, 'Unauthorized: Invalid API Key');
+            }
           } else {
-            console.log(`[WS] Authentication failed`);
+            console.log(`[WS] Authentication failed: Missing apiKey`);
             ws.close(1008, 'Unauthorized');
           }
           return;
@@ -39,7 +47,8 @@ function setupWebSocket(server) {
         if (data.type === 'claim_code_generated') {
           console.log(`[WS] Received claim code from MC server:`, data.code);
           if (claimCodeHandler) {
-            await claimCodeHandler(data);
+            // Add the serverId context so we know which server generated the code
+            await claimCodeHandler({ ...data, serverId });
           }
         }
       } catch (err) {
@@ -54,28 +63,24 @@ function setupWebSocket(server) {
   });
 
   return {
-    routeToStreamer(streamerUsername, event) {
-      if (!streamerUsername) return;
-      const target = streamerUsername.toLowerCase();
+    routeToServer(targetServerId, event) {
+      if (!targetServerId) return;
       const message = JSON.stringify(event);
       
       let sent = 0;
       for (const [client, meta] of clients.entries()) {
-        if (meta.streamer === target && client.readyState === WebSocket.OPEN) {
+        if (meta.serverId === targetServerId && client.readyState === WebSocket.OPEN) {
           client.send(message);
           sent++;
         }
       }
-      console.log(`[WS] Routed event '${event.type}' to ${sent} servers for streamer '${target}'`);
+      console.log(`[WS] Routed event '${event.type}' to ${sent} WebSocket connections for serverId '${targetServerId}'`);
     },
     setClaimCodeHandler(handler) {
       claimCodeHandler = handler;
     },
     getActiveConnections() {
       return Array.from(clients.values());
-    },
-    onClientAuth(handler) {
-      clientAuthHandler = handler;
     }
   };
 }

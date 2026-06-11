@@ -1,7 +1,7 @@
 bridge:
-  url: "ws://164.90.227.96:8811"
-  secret: "change_me_in_production"
-  api-url: "https://kick.bechatbot.online/api/kick"
+  api-url: "http://164.90.227.96:8811/api/kick"
+  ws-url: "ws://164.90.227.96:8811"
+  api-key: "CHANGE_ME_IN_DASHBOARD"
 
 streamer-kick-username: "Eysekiller"
 streamer-uuid: "00000000-0000-0000-0000-000000000000"

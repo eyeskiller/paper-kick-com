@@ -7,15 +7,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Customer {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  servers   Server[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Server {
+  id            String   @id @default(uuid())
+  name          String
+  apiKey        String   @unique @default(uuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  kickClientId  String?
+  kickSecret    String?
+  kickChannel   String?
+  kickChannelId String?
+  linkedUsers   LinkedUser[]
+  claimCodes    ClaimCode[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 model LinkedUser {
   minecraftUuid  String  @id
-  kickChannelId  String?
   kickUsername   String
-  accessToken    String?
-  refreshToken   String?
-  role           String  @default("PLAYER") // STREAMER or PLAYER
   isSubscriber   Boolean @default(false)
   isActive       Boolean @default(true)
+  serverId       String
+  server         Server  @relation(fields: [serverId], references: [id])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -25,5 +48,7 @@ model ClaimCode {
   minecraftUuid String
   kickUsername  String
   expiresAt     DateTime
+  serverId      String
+  server        Server   @relation(fields: [serverId], references: [id])
   createdAt     DateTime @default(now())
 }

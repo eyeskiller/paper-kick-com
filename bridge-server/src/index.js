@@ -3,13 +3,14 @@ const express = require('express');
 const http = require('http');
 const crypto = require('crypto');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 const { PrismaClient } = require('@prisma/client');
 const { setupWebSocket } = require('./websocketServer');
 
 const prisma = new PrismaClient();
 const app = express();
 const server = http.createServer(app);
-const wsManager = setupWebSocket(server);
+const wsManager = setupWebSocket(server, prisma); // Pass prisma for auth
 
 // Store generated claim codes from the WS client
 wsManager.setClaimCodeHandler(async (data) => {
@@ -19,6 +20,7 @@ wsManager.setClaimCodeHandler(async (data) => {
         code: data.code,
         minecraftUuid: data.minecraftUuid,
         kickUsername: data.kickUsername,
+        serverId: data.serverId, // Added from ws meta
         expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 mins
       }
     });
@@ -27,13 +29,21 @@ wsManager.setClaimCodeHandler(async (data) => {
   }
 });
 
+app.use(cookieParser());
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf.toString();
   }
 }));
 
+// SaaS Routes
+const authRoutes = require('./routes/auth')(prisma);
+app.use('/api/auth', authRoutes.router);
+app.use('/api/dashboard', require('./routes/dashboard')(prisma, authRoutes.requireAuth, wsManager));
+
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+// Serve SaaS Dashboard (to be built)
+app.use('/', express.static(path.join(__dirname, '../public/saas')));
 
 app.get('/api/admin/stats', async (req, res) => {
   const auth = req.headers.authorization;
@@ -43,9 +53,13 @@ app.get('/api/admin/stats', async (req, res) => {
 
   try {
     const totalUsers = await prisma.linkedUser.count();
+    const totalServers = await prisma.server.count();
+    const totalCustomers = await prisma.customer.count();
     const activeConnections = wsManager.getActiveConnections();
     
     res.json({
+      totalCustomers,
+      totalServers,
       totalUsers,
       activeConnections,
       uptime: process.uptime()
@@ -61,7 +75,6 @@ async function fetchKickPublicKey() {
   try {
     const res = await fetch('https://api.kick.com/public/v1/public-key');
     const data = await res.text();
-    // Some endpoints return JSON with the key, others return plain text. Handle both.
     try {
       const json = JSON.parse(data);
       kickPublicKey = json?.data?.public_key || json.public_key || json.key || data;
@@ -74,20 +87,26 @@ async function fetchKickPublicKey() {
   }
 }
 
-// Fetch the public key on startup
 fetchKickPublicKey();
 
 const pkceVerifiers = new Map();
 
-app.get('/api/kick/auth', (req, res) => {
-  const clientId = process.env.KICK_CLIENT_ID;
+// SaaS Dynamic OAuth Flow
+app.get('/api/kick/auth', async (req, res) => {
+  const { serverId } = req.query;
+  if (!serverId) return res.status(400).send('Missing serverId');
+
+  const dbServer = await prisma.server.findUnique({ where: { id: serverId } });
+  if (!dbServer) return res.status(404).send('Server not found');
+
+  const clientId = dbServer.kickClientId || process.env.KICK_CLIENT_ID;
   const redirectUri = encodeURIComponent('https://kick.bechatbot.online/api/kick/callback');
   
   const state = crypto.randomBytes(16).toString('hex');
   const codeVerifier = crypto.randomBytes(32).toString('base64url');
   const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
   
-  pkceVerifiers.set(state, codeVerifier);
+  pkceVerifiers.set(state, { codeVerifier, serverId });
 
   const scope = encodeURIComponent('user:read channel:read chat:write events:subscribe');
   const url = `https://id.kick.com/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
@@ -99,9 +118,16 @@ app.get('/api/kick/callback', async (req, res) => {
   const { code, state } = req.query;
   if (!code || !state) return res.status(400).send('Missing code or state');
   
-  const codeVerifier = pkceVerifiers.get(state);
-  if (!codeVerifier) return res.status(400).send('Invalid state or expired session');
+  const sessionData = pkceVerifiers.get(state);
+  if (!sessionData) return res.status(400).send('Invalid state or expired session');
   pkceVerifiers.delete(state);
+
+  const { codeVerifier, serverId } = sessionData;
+  const dbServer = await prisma.server.findUnique({ where: { id: serverId } });
+  if (!dbServer) return res.status(404).send('Server not found');
+
+  const clientId = dbServer.kickClientId || process.env.KICK_CLIENT_ID;
+  const clientSecret = dbServer.kickSecret || process.env.KICK_CLIENT_SECRET;
 
   try {
     const tokenResponse = await fetch('https://id.kick.com/oauth/token', {
@@ -111,8 +137,8 @@ app.get('/api/kick/callback', async (req, res) => {
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        client_id: process.env.KICK_CLIENT_ID,
-        client_secret: process.env.KICK_CLIENT_SECRET,
+        client_id: clientId,
+        client_secret: clientSecret,
         redirect_uri: 'https://kick.bechatbot.online/api/kick/callback',
         code: code,
         code_verifier: codeVerifier
@@ -125,9 +151,27 @@ app.get('/api/kick/callback', async (req, res) => {
       return res.status(400).send('Failed to obtain token from Kick. Check server logs.');
     }
 
-    console.log('[OAuth] Successfully obtained access token. Subscribing to Webhooks...');
+    console.log('[OAuth] Successfully obtained access token. Identifying user...');
 
-    // Subscribe to chat events using the Official Kick Dev API!
+    // Get the authorized user's details to store their channel slug
+    const userRes = await fetch('https://api.kick.com/public/v1/users', {
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+    });
+    
+    if (userRes.ok) {
+      const userData = await userRes.json();
+      // Assuming the response array contains the authorized user when no ID is specified
+      const authorizedUser = userData.data && userData.data.length > 0 ? userData.data[0] : null;
+      if (authorizedUser && authorizedUser.name) {
+        await prisma.server.update({
+          where: { id: serverId },
+          data: { kickChannel: authorizedUser.name.toLowerCase() }
+        });
+        console.log(`[OAuth] Linked Server ${dbServer.name} to Kick Channel ${authorizedUser.name}`);
+      }
+    }
+
+    console.log('[OAuth] Subscribing to Webhooks...');
     const subResponse = await fetch('https://api.kick.com/public/v1/events/subscriptions', {
       method: 'POST',
       headers: {
@@ -149,8 +193,7 @@ app.get('/api/kick/callback', async (req, res) => {
       return res.status(500).send(`Token was retrieved, but webhook subscription failed: ${subErr}`);
     }
 
-    console.log('[OAuth] Webhook subscription successful!');
-    res.send('Authorization successful! You can close this window. Kick webhooks are now enabled for your channel. Type a KICK-XXXX code in your chat to test it!');
+    res.send('Authorization successful! Your Server is now linked to Kick Webhooks. You can close this window.');
   } catch (err) {
     console.error('[OAuth] Exception:', err);
     res.status(500).send('Internal Server Error during Kick authorization.');
@@ -181,8 +224,6 @@ app.post('/api/webhooks/kick', async (req, res) => {
       console.error('[Webhook] Error validating signature:', err);
       return res.status(500).send('Signature validation failed');
     }
-  } else {
-    console.warn('[Webhook] Warning: Processing webhook without signature validation because Kick public key is missing.');
   }
 
   const event = req.body;
@@ -193,31 +234,42 @@ app.post('/api/webhooks/kick', async (req, res) => {
       const messageText = event.content;
       const sender = event.sender.username;
 
-      // Ensure backward compatibility with different payload structures just in case
       const broadcasterObj = event.broadcaster || event.streamer || event.channel;
       const streamerTarget = broadcasterObj?.slug || broadcasterObj?.username;
       
+      if (!streamerTarget) return res.status(200).send('OK');
+
+      // Find the Server associated with this channel
+      const dbServer = await prisma.server.findFirst({
+        where: { kickChannel: streamerTarget.toLowerCase() }
+      });
+
+      if (!dbServer) {
+         console.warn(`[Webhook] Received event for unlinked channel ${streamerTarget}`);
+         return res.status(200).send('OK');
+      }
+
       const claimMatch = messageText.match(/KICK-[A-Z0-9]{4}/) || messageText.match(/^[A-Z0-9]{6}$/);
-      if (claimMatch && streamerTarget) {
+      if (claimMatch) {
         const code = claimMatch[0];
         const claim = await prisma.claimCode.findUnique({ where: { code } });
         
-        if (claim && claim.expiresAt > new Date()) {
+        if (claim && claim.expiresAt > new Date() && claim.serverId === dbServer.id) {
           console.log(`[Claim] Valid code ${code} for ${sender} -> ${claim.minecraftUuid}`);
           
           await prisma.linkedUser.upsert({
             where: { minecraftUuid: claim.minecraftUuid },
-            update: { kickUsername: sender },
+            update: { kickUsername: sender, serverId: dbServer.id },
             create: {
               minecraftUuid: claim.minecraftUuid,
-              kickUsername: sender
+              kickUsername: sender,
+              serverId: dbServer.id
             }
           });
 
           await prisma.claimCode.delete({ where: { code } });
 
-          // Because streamerTarget might be cased differently, we pass it down
-          wsManager.routeToStreamer(streamerTarget.toLowerCase(), {
+          wsManager.routeToServer(dbServer.id, {
             type: 'claim_success',
             minecraftUuid: claim.minecraftUuid,
             kickUsername: sender
@@ -233,7 +285,6 @@ app.post('/api/webhooks/kick', async (req, res) => {
   }
 });
 
-// Endpoint for Paper plugin to check subscriber status on join
 app.get('/api/kick/status/:uuid', async (req, res) => {
   try {
     const user = await prisma.linkedUser.findUnique({

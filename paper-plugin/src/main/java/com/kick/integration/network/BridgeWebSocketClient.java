@@ -14,27 +14,21 @@ import java.util.logging.Level;
 public class BridgeWebSocketClient extends WebSocketClient {
 
     private final KickIntegrationPlugin plugin;
-    private final String secret;
-    private final String streamer;
-    private final int chatroomId;
+    private final String apiKey;
     private final Gson gson = new Gson();
 
-    public BridgeWebSocketClient(KickIntegrationPlugin plugin, URI serverUri, String secret, String streamer, int chatroomId) {
+    public BridgeWebSocketClient(KickIntegrationPlugin plugin, URI serverUri, String apiKey) {
         super(serverUri);
         this.plugin = plugin;
-        this.secret = secret;
-        this.streamer = streamer;
-        this.chatroomId = chatroomId;
+        this.apiKey = apiKey;
     }
 
     @Override
     public void onOpen(ServerHandshake handshakedata) {
-        plugin.getLogger().info("Connected to Bridge Server. Authenticating as " + streamer + "...");
+        plugin.getLogger().info("Connected to Bridge Server. Authenticating API Key...");
         JsonObject authMsg = new JsonObject();
         authMsg.addProperty("type", "auth");
-        authMsg.addProperty("secret", secret);
-        authMsg.addProperty("streamer", streamer);
-        authMsg.addProperty("chatroomId", chatroomId);
+        authMsg.addProperty("apiKey", apiKey);
         send(gson.toJson(authMsg));
     }
 
