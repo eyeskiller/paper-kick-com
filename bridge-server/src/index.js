@@ -120,15 +120,14 @@ wsManager.onClientAuth(async (streamerSlug) => {
   subscribedChannels.add(streamerSlug);
 
   try {
-    const res = await fetch(`https://kick.com/api/v1/channels/${streamerSlug}`, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-      }
-    });
-    if (!res.ok) throw new Error('Channel not found on Kick API');
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://kick.com/api/v1/channels/${streamerSlug}`)}`;
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error('Failed to fetch from proxy');
     
-    const data = await res.json();
+    const proxyData = await res.json();
+    if (!proxyData.contents) throw new Error('Channel not found on Kick API');
+    
+    const data = JSON.parse(proxyData.contents);
     const chatroomId = data.chatroom.id;
     
     console.log(`[Pusher] Subscribing to chatroom ${chatroomId} for streamer ${streamerSlug}`);
