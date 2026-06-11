@@ -110,5 +110,24 @@ module.exports = function(prisma, requireAuth, wsManager) {
     }
   });
 
+  router.patch('/servers/:id/events', requireAuth, async (req, res) => {
+    try {
+      const server = await prisma.server.findFirst({
+        where: { id: req.params.id, customerId: req.user.id }
+      });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
+
+      const updated = await prisma.server.update({
+        where: { id: server.id },
+        data: { eventsEnabled: req.body.eventsEnabled }
+      });
+
+      res.json(updated);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
   return router;
 };

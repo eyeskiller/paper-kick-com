@@ -288,11 +288,13 @@ app.post('/api/webhooks/kick', async (req, res) => {
           data: { isSubscriber: true }
         });
       }
-      wsManager.routeToServer(dbServer.id, {
-        type: 'subscription_event',
-        subType: eventType,
-        data: { username: subscriberUsername }
-      });
+      if (dbServer.eventsEnabled) {
+        wsManager.routeToServer(dbServer.id, {
+          type: 'subscription_event',
+          subType: eventType,
+          data: { username: subscriberUsername }
+        });
+      }
     } else if (eventType === 'channel.subscription.gifts') {
       if (event.giftees && Array.isArray(event.giftees)) {
         const gifteeUsernames = event.giftees.map(g => g.username);
@@ -301,11 +303,13 @@ app.post('/api/webhooks/kick', async (req, res) => {
           data: { isSubscriber: true }
         });
       }
-      wsManager.routeToServer(dbServer.id, {
-        type: 'subscription_event',
-        subType: eventType,
-        data: { count: event.giftees ? event.giftees.length : 0 }
-      });
+      if (dbServer.eventsEnabled) {
+        wsManager.routeToServer(dbServer.id, {
+          type: 'subscription_event',
+          subType: eventType,
+          data: { count: event.giftees ? event.giftees.length : 0 }
+        });
+      }
     }
 
     res.status(200).send('OK');

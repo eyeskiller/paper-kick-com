@@ -26,6 +26,7 @@ model Server {
   kickSecret    String?
   kickChannel   String?
   kickChannelId String?
+  eventsEnabled Boolean  @default(true)
   linkedUsers   LinkedUser[]
   claimCodes    ClaimCode[]
   createdAt     DateTime @default(now())
