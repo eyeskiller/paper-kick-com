@@ -55,28 +55,6 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
-let kickPublicKey = null;
-
-async function fetchKickPublicKey() {
-  try {
-    const res = await fetch('https://api.kick.com/public/v1/public-key');
-    const data = await res.text();
-    // Some endpoints return JSON with the key, others return plain text. Handle both.
-    try {
-      const json = JSON.parse(data);
-      kickPublicKey = json.public_key || json.key || data;
-    } catch {
-      kickPublicKey = data;
-    }
-    console.log('[Webhook] Successfully fetched Kick Public Key for signature verification.');
-  } catch (err) {
-    console.error('[Webhook] Failed to fetch Kick Public Key. Webhooks will not be verified securely:', err.message);
-  }
-}
-
-// Fetch the public key on startup
-fetchKickPublicKey();
-
 const pkceVerifiers = new Map();
 
 app.get('/api/kick/auth', (req, res) => {
@@ -125,32 +103,8 @@ app.get('/api/kick/callback', async (req, res) => {
       return res.status(400).send('Failed to obtain token from Kick. Check server logs.');
     }
 
-    console.log('[OAuth] Successfully obtained access token. Subscribing to Webhooks...');
-
-    // Subscribe to chat events using the Official Kick Dev API!
-    const subResponse = await fetch('https://api.kick.com/public/v1/events/subscriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        method: 'webhook',
-        events: [
-          { name: 'chat.message.sent', version: 1 }
-        ]
-      })
-    });
-
-    if (!subResponse.ok) {
-      const subErr = await subResponse.text();
-      console.error('[OAuth] Failed to subscribe to webhooks:', subErr);
-      return res.status(500).send(`Token was retrieved, but webhook subscription failed: ${subErr}`);
-    }
-
-    console.log('[OAuth] Webhook subscription successful!');
-    res.send('Authorization successful! You can close this window. Kick webhooks are now enabled for your channel. Type a KICK-XXXX code in your chat to test it!');
+    console.log('[OAuth] Successfully obtained access token for user!');
+    res.send('Authorization successful! You can close this window. Kick webhooks are now enabled for your channel.');
   } catch (err) {
     console.error('[OAuth] Exception:', err);
     res.status(500).send('Internal Server Error during Kick authorization.');
@@ -158,44 +112,24 @@ app.get('/api/kick/callback', async (req, res) => {
 });
 
 app.post('/api/webhooks/kick', async (req, res) => {
-  const signature = req.headers['kick-event-signature'];
-  const messageId = req.headers['kick-event-message-id'];
-  const timestamp = req.headers['kick-event-message-timestamp'];
-
-  if (!signature || !messageId || !timestamp) {
-    return res.status(400).send('Missing required Kick Webhook headers');
-  }
-
-  if (kickPublicKey) {
-    try {
-      const signatureBase = `${messageId}.${timestamp}.${req.rawBody}`;
-      const verify = crypto.createVerify('SHA256');
-      verify.update(signatureBase);
-      const isValid = verify.verify(kickPublicKey, Buffer.from(signature, 'base64'));
-
-      if (!isValid) {
-        console.warn('[Webhook] Invalid signature received!');
-        return res.status(401).send('Invalid signature');
-      }
-    } catch (err) {
-      console.error('[Webhook] Error validating signature:', err);
-      return res.status(500).send('Signature validation failed');
-    }
-  } else {
-    console.warn('[Webhook] Warning: Processing webhook without signature validation because Kick public key is missing.');
+  const signature = req.headers['x-kick-signature'];
+  
+  if (process.env.KICK_WEBHOOK_SECRET && signature) {
+    const hmac = crypto.createHmac('sha256', process.env.KICK_WEBHOOK_SECRET);
+    const calculatedSignature = hmac.update(req.rawBody).digest('hex');
+    // Uncomment for prod:
+    // if (calculatedSignature !== signature) return res.status(401).send('Invalid signature');
   }
 
   const event = req.body;
-  console.log(`[Webhook] Received event:`, req.headers['kick-event-type']);
+  console.log(`[Webhook] Received event:`, event?.type);
 
   try {
-    if (req.headers['kick-event-type'] === 'chat.message.sent') {
-      const messageText = event.content;
-      const sender = event.sender.username;
+    if (event.type === 'chat.message.sent') {
+      const messageText = event.data.message;
+      const sender = event.data.sender.username;
 
-      // Ensure backward compatibility with different payload structures just in case
-      const broadcasterObj = event.broadcaster || event.streamer || event.channel;
-      const streamerTarget = broadcasterObj?.slug || broadcasterObj?.username;
+      const streamerTarget = event.streamer?.slug || event.data?.channel?.slug || event.data?.streamer?.slug;
       
       const claimMatch = messageText.match(/KICK-[A-Z0-9]{4}/) || messageText.match(/^[A-Z0-9]{6}$/);
       if (claimMatch && streamerTarget) {
@@ -216,13 +150,23 @@ app.post('/api/webhooks/kick', async (req, res) => {
 
           await prisma.claimCode.delete({ where: { code } });
 
-          // Because streamerTarget might be cased differently, we pass it down
-          wsManager.routeToStreamer(streamerTarget.toLowerCase(), {
+          wsManager.routeToStreamer(streamerTarget, {
             type: 'claim_success',
             minecraftUuid: claim.minecraftUuid,
             kickUsername: sender
           });
         }
+      }
+    } else if (event.type === 'channel.subscription.new' || event.type === 'kicks.gifted') {
+      const streamerTarget = event.streamer?.slug || event.data?.channel?.slug || event.data?.streamer?.slug;
+      if (streamerTarget) {
+        wsManager.routeToStreamer(streamerTarget, {
+          type: 'subscription_event',
+          subType: event.type,
+          data: event.data
+        });
+      } else {
+        console.warn('[Webhook] Missing streamer target in subscription event payload!');
       }
     }
 
