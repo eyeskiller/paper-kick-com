@@ -3,7 +3,7 @@ const express = require('express');
 const http = require('http');
 const crypto = require('crypto');
 const path = require('path');
-const Pusher = require('pusher-js');
+const { Pusher } = require('pusher-js');
 const { PrismaClient } = require('@prisma/client');
 const { setupWebSocket } = require('./websocketServer');
 
