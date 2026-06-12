@@ -89,14 +89,40 @@ The server will start on port `8811`. Make sure your Nginx proxy maps your domai
    *(You can find UUIDs using a tool like namemc.com)*
 3. Run `/kick reload` in-game or from the console.
 
-## Usage
+## ✨ Features & Capabilities
 
-### Claiming an Account
-1. A player logs into Minecraft and types `/kick claim <KickUsername>`.
-2. The server generates a unique code (e.g., `KICK-A1B2`).
-3. The player has 5 minutes to type this code into the Streamer's Kick.com chat.
-4. The Bridge Server receives the chat message via webhook, validates the code, and links the account!
-5. When linked subscribers join the game, they will receive a `[KICK SUB]` prefix in the player list.
+The Kick Integration plugin is packed with interactive tools to monetize and engage your Kick stream:
 
-### Configuring Actions
-Log into your self-hosted web UI, click on your server, and click "Configure Actions". Here you can add actions like spawning mobs or dropping items based on chat keywords and subscriptions.
+### 🎮 Player Account Linking
+- Players use `/kick claim <Username>` in Minecraft to generate a temporary verification code.
+- They paste this code in your Kick chat to verify their identity securely.
+- **Automatic Subscriber Sync**: The bridge automatically reads chat badges from Kick webhooks. When a linked player types in chat, the system detects if they have a sub badge and instantly syncs their subscriber status to the server!
+- **In-Game Perks**: Verified subscribers receive a prominent `[KICK SUB]` prefix in the player list (Tab).
+- Server admins can easily view all linked players and manually override subscriber status directly from the Web Dashboard.
+
+### ⚡ Dynamic Event Actions
+Configure exactly what happens in-game when events happen on your stream!
+
+**Supported Triggers:**
+- **Chat Messages:** Trigger actions when viewers type specific keywords (e.g. `!creeper`).
+- **New Subscriptions:** Reward or troll the streamer when someone subscribes.
+- **Gifted Subscriptions:** Highly customizable math logic for gifted subs!
+  - You can set rules for **Exact** amounts (e.g. `== 5` drops 1 diamond block).
+  - You can set rules for **At Least** amounts (e.g. `>= 20` spawns a Warden).
+  - **Multiply Fallback:** If no exact rule matches, use the *Otherwise, Multiply Payload* option to multiply your action by the number of gifts. (e.g. If you configure it to spawn 1 zombie, and a viewer gifts 10 subs, it spawns 10 zombies!).
+
+**Available In-Game Actions:**
+- **Spawn Mobs:** Spawn entities like Creepers, Zombies, Skeletons, or Wardens right on top of the streamer.
+- **Give Items:** Give the streamer valuable items like Diamonds, Netherite Ingots, or Enchanted Golden Apples.
+- **Drop Streamer Hotbar:** Instantly force the streamer to drop whatever items are in their active hotbar!
+- **Execute Console Command:** Run custom commands using variables. You can use `%streamer%` (the streamer's username) and `%sender%` (the Kick viewer who triggered it).
+
+### 🧪 Built-In Testing
+Don't want to spend real money testing your Gifted Sub actions? The Web Dashboard features a `🧪 Test Action` button next to every configured rule. It will even prompt you to simulate specific amounts of gifted subs so you can test your math perfectly in-game.
+
+## 🛠️ Usage
+
+1. Log into your dashboard and link your Minecraft server.
+2. Ensure your `KickIntegration` plugin is connected (`/kick status`).
+3. Click **Manage Actions** in the dashboard to start creating your interactive rules.
+4. Tell your viewers to type `/kick claim` in-game to sync their accounts!
