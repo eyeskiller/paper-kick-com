@@ -412,6 +412,7 @@ async function loadActions(serverId) {
           <div class="small text-muted">${pl}</div>
         </td>
         <td class="text-end">
+          <button onclick="testAction('${serverId}', '${action.id}')" class="btn btn-outline-success btn-sm me-1" title="Test Action on Server">🧪</button>
           <button onclick="deleteAction('${serverId}', '${action.id}')" class="btn btn-outline-danger btn-sm" title="Delete">❌</button>
         </td>
       `;
@@ -420,6 +421,18 @@ async function loadActions(serverId) {
   } catch (err) {
     console.error('Failed to load actions', err);
     tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error loading actions.</td></tr>';
+  }
+}
+
+async function testAction(serverId, actionId) {
+  try {
+    const res = await fetch(`/api/dashboard/servers/${serverId}/actions/${actionId}/test`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error('Failed to send test action');
+    // We could show a toast here, but simple is fine
+  } catch (err) {
+    alert(err.message);
   }
 }
 

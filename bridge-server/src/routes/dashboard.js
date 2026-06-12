@@ -225,5 +225,32 @@ module.exports = function(prisma, requireAuth, wsManager) {
     }
   });
 
+  // Test an action
+  router.post('/servers/:id/actions/:actionId/test', requireAuth, async (req, res) => {
+    try {
+      const server = await prisma.server.findFirst({
+        where: { id: req.params.id, customerId: req.user.id }
+      });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
+
+      const action = await prisma.actionRule.findFirst({
+        where: { id: req.params.actionId, serverId: server.id }
+      });
+      if (!action) return res.status(404).json({ error: 'Action not found' });
+
+      wsManager.routeToServer(server.id, {
+        type: 'execute_action',
+        actionType: action.actionType,
+        sender: 'TestUser',
+        payload: action.payload
+      });
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
   return router;
 };
