@@ -4,6 +4,21 @@ This project integrates the Kick.com streaming platform with a Minecraft server 
 
 You can configure what happens in-game through our beautiful Web UI!
 
+---
+
+## 🚀 Looking for an Easier Way? Try Our Hosted SaaS!
+
+Don't want to deal with setting up databases, reverse proxies, and Node.js servers? 
+We offer a **fully managed SaaS platform** for only **€1.99 / month**!
+
+- **No VPS Required**: We host the bridge server and web dashboard for you.
+- **1-Click Connection**: Instant connection to your Minecraft server.
+- **Automatic Updates**: Always get the latest features with zero maintenance.
+
+**[👉 Get Started at kick.bechatbot.online](https://kick.bechatbot.online/)**
+
+---
+
 ## 🛠️ Installation Setup
 
 The system is fully open-source and can run on your own VPS.
