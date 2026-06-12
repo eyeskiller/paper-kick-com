@@ -1,5 +1,9 @@
 # Kick.com to Minecraft Server Integration
 
+<p align="center">
+  <img src="assets/banner.jpg" alt="Paper x Kick API Banner" width="600"/>
+</p>
+
 This project integrates the Kick.com streaming platform with a Minecraft server running Paper. Real-time events from Kick (chat messages, new subscriptions, gifted subs) trigger specific in-game actions on the Minecraft server.
 
 You can configure what happens in-game through our beautiful Web UI!
