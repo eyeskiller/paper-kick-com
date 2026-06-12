@@ -329,23 +329,28 @@
     </div>
   </div>
 
-  <!-- ACTIONS MODAL -->
-  <div class="modal" id="actions-modal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header border-0">
-          <h5 class="modal-title fw-bold" id="actions-modal-title">Event Actions</h5>
-          <button type="button" class="btn-close" onclick="closeActionsModal()"></button>
+  <!-- ACTIONS VIEW -->
+  <div id="actions-view" class="min-vh-100 d-flex flex-column bg-light" style="display: none !important;">
+    <nav class="navbar navbar-expand-lg bg-white shadow-sm py-3">
+      <div class="container">
+        <div class="d-flex align-items-center gap-3">
+          <button onclick="navigateDashboard()" class="btn btn-outline-secondary btn-sm">← Back to Dashboard</button>
+          <span class="navbar-brand mb-0 h1" id="actions-view-title">Event Actions</span>
         </div>
-        <div class="modal-body">
+      </div>
+    </nav>
+
+    <div class="container flex-grow-1 py-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-5">
           <div class="row g-5">
             <!-- Form Section -->
-            <div class="col-lg-5 border-end">
-              <h6 class="fw-bold mb-3 text-uppercase text-muted">Add New Action</h6>
+            <div class="col-lg-5 border-end pe-lg-5">
+              <h6 class="fw-bold mb-4 text-uppercase text-muted">Add New Action</h6>
               <form id="add-action-form" onsubmit="handleAddAction(event)">
                 <input type="hidden" id="action-server-id">
                 
-                <div class="mb-3">
+                <div class="mb-4">
                   <label class="form-label fw-semibold">Event Trigger</label>
                   <select class="form-select" id="action-event-type" required onchange="updateActionForm()">
                     <option value="CHAT">Chat Message (contains)</option>
@@ -354,7 +359,7 @@
                   </select>
                 </div>
                 
-                <div class="mb-3" id="action-condition-group">
+                <div class="mb-4" id="action-condition-group">
                   <label class="form-label fw-semibold" id="action-condition-label">Condition</label>
                   <div class="d-flex gap-2">
                     <select class="form-select w-auto" id="action-condition-operator" style="display: none;" onchange="updateActionForm()">
@@ -366,7 +371,7 @@
                   </div>
                 </div>
 
-                <div class="mb-3">
+                <div class="mb-4">
                   <label class="form-label fw-semibold">In-Game Action</label>
                   <select class="form-select" id="action-action-type" required onchange="updateActionForm()">
                     <option value="SPAWN_MOB">Spawn Mob</option>
@@ -377,25 +382,25 @@
                 </div>
 
                 <!-- Dynamic payload fields -->
-                <div id="action-payload-fields" class="bg-light p-3 rounded mb-4 border">
+                <div id="action-payload-fields" class="bg-light p-4 rounded mb-4 border">
                   <!-- Populated by JS -->
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 fw-bold">Create Action</button>
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">Create Action</button>
               </form>
             </div>
 
             <!-- Table Section -->
-            <div class="col-lg-7">
-              <h6 class="fw-bold mb-3 text-uppercase text-muted">Active Actions</h6>
+            <div class="col-lg-7 ps-lg-5">
+              <h6 class="fw-bold mb-4 text-uppercase text-muted">Active Actions</h6>
               <div class="table-responsive">
                 <table class="table table-hover align-middle">
                   <thead class="table-light">
                     <tr>
-                      <th>Event</th>
-                      <th>Condition</th>
-                      <th>Action</th>
-                      <th class="text-end"></th>
+                      <th class="ps-3 py-3">Event</th>
+                      <th class="py-3">Condition</th>
+                      <th class="py-3">Action</th>
+                      <th class="text-end pe-3 py-3"></th>
                     </tr>
                   </thead>
                   <tbody id="actions-table-body">
@@ -405,9 +410,6 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="modal-footer border-0">
-          <button type="button" class="btn btn-outline-secondary" onclick="closeActionsModal()">Close</button>
         </div>
       </div>
     </div>

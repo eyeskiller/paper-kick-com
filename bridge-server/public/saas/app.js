@@ -1,10 +1,9 @@
 let currentAuthMode = 'login';
-let newServerModal, playersModal, actionsModal;
+let newServerModal, playersModal;
 
 document.addEventListener("DOMContentLoaded", () => {
   newServerModal = new bootstrap.Modal(document.getElementById('new-server-modal'));
   playersModal = new bootstrap.Modal(document.getElementById('players-modal'));
-  actionsModal = new bootstrap.Modal(document.getElementById('actions-modal'));
   loadServers();
 });
 
@@ -12,6 +11,7 @@ function showAuthView(mode) {
   document.getElementById('landing-view').style.setProperty('display', 'none', 'important');
   document.getElementById('auth-view').style.setProperty('display', 'flex', 'important');
   document.getElementById('dashboard-view').style.setProperty('display', 'none', 'important');
+  document.getElementById('actions-view').style.setProperty('display', 'none', 'important');
   switchAuthTab(mode);
 }
 
@@ -89,6 +89,12 @@ async function loadServers() {
     document.getElementById('landing-view').style.setProperty('display', 'none', 'important');
     document.getElementById('auth-view').style.setProperty('display', 'none', 'important');
     document.getElementById('dashboard-view').style.setProperty('display', 'flex', 'important');
+    document.getElementById('actions-view').style.setProperty('display', 'none', 'important');
+    
+    // Set base URL for dashboard
+    if (window.location.hash !== '#/dashboard') {
+      history.replaceState({ view: 'dashboard' }, '', '#/dashboard');
+    }
     
     const grid = document.getElementById('servers-grid');
     grid.innerHTML = '';
@@ -145,7 +151,7 @@ async function loadServers() {
               </div>
               <div class="d-flex gap-2">
                 <button onclick="viewPlayers('${server.id}', '${server.name}')" class="btn btn-light btn-sm flex-fill fw-semibold border">Players</button>
-                <button onclick="openActionsModal('${server.id}', '${server.name}')" class="btn btn-primary btn-sm flex-fill fw-semibold">Actions</button>
+                <button onclick="navigateActions('${server.id}', '${server.name}')" class="btn btn-primary btn-sm flex-fill fw-semibold">Actions</button>
               </div>
             </div>
           </div>
@@ -277,17 +283,37 @@ function closePlayersModal() {
   playersModal.hide();
 }
 
-// === ACTIONS ===
-function openActionsModal(serverId, serverName) {
-  document.getElementById('action-server-id').value = serverId;
-  document.getElementById('actions-modal-title').textContent = `Actions for ${serverName}`;
-  actionsModal.show();
-  updateActionForm();
-  loadActions(serverId);
+// === CLIENT-SIDE ROUTING & ACTIONS VIEW ===
+window.onpopstate = function(event) {
+  if (event.state && event.state.view === 'actions') {
+    showActionsView(event.state.serverId, event.state.serverName);
+  } else {
+    navigateDashboard(false); // false = don't push state again
+  }
+};
+
+function navigateDashboard(push = true) {
+  document.getElementById('dashboard-view').style.setProperty('display', 'flex', 'important');
+  document.getElementById('actions-view').style.setProperty('display', 'none', 'important');
+  if (push) {
+    history.pushState({ view: 'dashboard' }, '', '#/dashboard');
+  }
+  loadServers();
 }
 
-function closeActionsModal() {
-  actionsModal.hide();
+function navigateActions(serverId, serverName) {
+  history.pushState({ view: 'actions', serverId, serverName }, '', `#/dashboard/server/${serverId}/actions`);
+  showActionsView(serverId, serverName);
+}
+
+function showActionsView(serverId, serverName) {
+  document.getElementById('dashboard-view').style.setProperty('display', 'none', 'important');
+  document.getElementById('actions-view').style.setProperty('display', 'flex', 'important');
+  
+  document.getElementById('action-server-id').value = serverId;
+  document.getElementById('actions-view-title').textContent = `Actions for ${serverName}`;
+  updateActionForm();
+  loadActions(serverId);
 }
 
 function updateActionForm() {
