@@ -28,14 +28,22 @@ Once created, you will receive a **Client ID**, **Client Secret**, and a **Webho
 ### Installation
 1. Navigate to the `bridge-server` directory.
 2. Run `npm install` to install dependencies.
-3. Edit the `.env` file and insert your Kick Developer credentials:
+3. Edit the `.env` file and insert your configuration:
    ```env
    DATABASE_URL="file:./dev.db"
    PORT=8811
-   JWT_SECRET="change_me_in_production"
+   WS_SECRET="change_me_in_production"
+   KICK_CLIENT_ID=""
+   KICK_CLIENT_SECRET=""
+   KICK_WEBHOOK_SECRET=""
+   ADMIN_PASSWORD=""
+   TURNSTILE_SECRET_KEY=""
    ```
-   *(Note: You do not need to put your Kick secrets in `.env` if you are using the web dashboard, as you will configure them in the UI!)*
-4. Initialize the SQLite database by running:
+4. **Cloudflare Turnstile Setup (Anti-Bot):**
+   - The Web Dashboard uses Cloudflare Turnstile. You must create a site key and secret key on your Cloudflare account.
+   - Put your `TURNSTILE_SECRET_KEY` in the `.env` file.
+   - Open `bridge-server/public/saas/index.html` and replace the `data-sitekey` attribute in the `<div class="cf-turnstile">` element with your Cloudflare Site Key.
+5. Initialize the SQLite database by running:
    ```bash
    npx prisma db push
    ```
