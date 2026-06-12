@@ -70,3 +70,7 @@ Don't want to spend real money testing your Gifted Sub actions? The Web Dashboar
 2. Ensure your `KickIntegration` plugin is connected (`/kick status`).
 3. Click **Manage Actions** in the dashboard to start creating your interactive rules.
 4. Tell your viewers to type `/kick claim` in-game to sync their accounts!
+
+## 💬 Support
+
+In case of any issues, join our Discord: https://discord.gg/Se4eKz8cGT
