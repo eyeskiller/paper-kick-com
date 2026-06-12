@@ -1,6 +1,6 @@
 # Installation Guide
 
-If you prefer not to use our [Hosted SaaS Platform](https://kick.bechatbot.online/), you can self-host the Kick Integration bridge server yourself. 
+You can self-host the Kick Integration bridge server yourself on a VPS.
 
 The system is split into two components:
 1. **Bridge Server**: A Node.js backend that handles Kick OAuth, webhooks, and maintains a WebSocket server.

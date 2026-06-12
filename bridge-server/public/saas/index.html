@@ -156,45 +156,18 @@
       </p>
     </div>
 
-    <div class="row g-4 w-100 justify-content-center" style="max-width: 900px;">
-      <!-- Open Source Option -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body p-4 text-start">
-            <h3 class="card-title fw-bold">Open Source</h3>
-            <p class="fs-4 fw-bold mb-4">Free Forever</p>
-            <ul class="list-unstyled text-muted mb-4 lh-lg">
-              <li>✓ Self-host on your own VPS</li>
-              <li>✓ Setup your own Webhooks & SSL</li>
-              <li>✓ Full access to source code</li>
-              <li>✓ Manage your own Node.js server</li>
-            </ul>
-            <a href="https://github.com/eyeskiller/paper-kick-com" target="_blank" class="btn btn-outline-dark w-100">View GitHub Repo</a>
+    <div class="row g-4 w-100 justify-content-center" style="max-width: 500px;">
+      <div class="col-12">
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-4 text-center">
+            <h3 class="card-title fw-bold mb-4">Self-Hosted Bridge</h3>
+            <div class="d-grid gap-3">
+              <button onclick="showAuthView('login')" class="btn btn-primary btn-lg">Login to Dashboard</button>
+              <button onclick="showAuthView('register')" class="btn btn-outline-secondary">Create Admin Account</button>
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- SaaS Option -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow border-primary position-relative">
-          <div class="position-absolute top-0 end-0 bg-primary text-dark px-3 py-1 fw-bold text-uppercase small" style="border-bottom-left-radius: 8px;">Recommended</div>
-          <div class="card-body p-4 text-start">
-            <h3 class="card-title fw-bold text-primary">Hosted Bridge</h3>
-            <p class="fs-4 fw-bold mb-4">€1.99 <span class="fs-6 fw-normal text-muted">/ month</span></p>
-            <ul class="list-unstyled text-muted mb-4 lh-lg">
-              <li>✓ 1-Click Minecraft connection</li>
-              <li>✓ No VPS or coding required</li>
-              <li>✓ Web Dashboard for Kick Actions</li>
-              <li>✓ Automatic updates & 24/7 uptime</li>
-            </ul>
-            <button onclick="showAuthView('register')" class="btn btn-primary w-100">Get Started</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-5 text-muted">
-      Already have an account? <a href="#" onclick="showAuthView('login'); return false;" class="text-primary text-decoration-none fw-semibold">Login here</a>
     </div>
   </div>
 
