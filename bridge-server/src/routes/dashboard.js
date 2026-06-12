@@ -238,11 +238,23 @@ module.exports = function(prisma, requireAuth, wsManager) {
       });
       if (!action) return res.status(404).json({ error: 'Action not found' });
 
+      let finalPayload = action.payload;
+      
+      if (req.body.count && action.eventType === 'SUB_GIFT' && action.condition === 'ELSE_MULTIPLY') {
+        try {
+          const parsed = JSON.parse(finalPayload);
+          if (parsed.amount) {
+            parsed.amount = parsed.amount * req.body.count;
+            finalPayload = JSON.stringify(parsed);
+          }
+        } catch (e) {}
+      }
+
       wsManager.routeToServer(server.id, {
         type: 'execute_action',
         actionType: action.actionType,
         sender: 'TestUser',
-        payload: action.payload
+        payload: finalPayload
       });
 
       res.json({ success: true });

@@ -423,7 +423,7 @@ async function loadActions(serverId) {
           <div class="small text-muted">${pl}</div>
         </td>
         <td class="text-end">
-          <button onclick="testAction('${serverId}', '${action.id}')" class="btn btn-outline-success btn-sm me-1" title="Test Action on Server">🧪</button>
+          <button onclick="testAction('${serverId}', '${action.id}', '${action.eventType}')" class="btn btn-outline-success btn-sm me-1" title="Test Action on Server">🧪</button>
           <button onclick="deleteAction('${serverId}', '${action.id}')" class="btn btn-outline-danger btn-sm" title="Delete">❌</button>
         </td>
       `;
@@ -435,10 +435,23 @@ async function loadActions(serverId) {
   }
 }
 
-async function testAction(serverId, actionId) {
+async function testAction(serverId, actionId, eventType) {
   try {
+    let testCount = null;
+    if (eventType === 'SUB_GIFT') {
+      const input = prompt("How many subs were gifted for this test?", "5");
+      if (input === null) return; // User cancelled
+      testCount = parseInt(input);
+      if (isNaN(testCount) || testCount < 1) {
+        alert("Please enter a valid number greater than 0");
+        return;
+      }
+    }
+
     const res = await fetch(`/api/dashboard/servers/${serverId}/actions/${actionId}/test`, {
-      method: 'POST'
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ count: testCount })
     });
     if (!res.ok) throw new Error('Failed to send test action');
     // We could show a toast here, but simple is fine
