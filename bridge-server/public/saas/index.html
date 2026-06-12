@@ -357,9 +357,10 @@
                 <div class="mb-3" id="action-condition-group">
                   <label class="form-label fw-semibold" id="action-condition-label">Condition</label>
                   <div class="d-flex gap-2">
-                    <select class="form-select w-auto" id="action-condition-operator" style="display: none;">
+                    <select class="form-select w-auto" id="action-condition-operator" style="display: none;" onchange="updateActionForm()">
                       <option value="==">Exact (=)</option>
-                      <option value=">=">Greater than or equal (>=)</option>
+                      <option value=">=">At Least (>=)</option>
+                      <option value="ELSE_MULTIPLY">Otherwise, Multiply Payload</option>
                     </select>
                     <input type="text" class="form-control" id="action-condition" placeholder="e.g. !creeper">
                   </div>

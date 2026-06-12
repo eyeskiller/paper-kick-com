@@ -306,6 +306,8 @@ function updateActionForm() {
     conditionLabel.textContent = 'Chat Keyword';
     conditionInput.type = 'text';
     conditionInput.placeholder = 'e.g. !creeper';
+    conditionInput.style.display = 'block';
+    conditionInput.required = true;
   } else if (eventType === 'SUB_GIFT') {
     conditionGroup.style.display = 'block';
     conditionOperator.style.display = 'block';
@@ -313,8 +315,17 @@ function updateActionForm() {
     conditionInput.type = 'number';
     conditionInput.placeholder = 'e.g. 5';
     conditionInput.min = '1';
+    
+    if (conditionOperator.value === 'ELSE_MULTIPLY') {
+      conditionInput.style.display = 'none';
+      conditionInput.required = false;
+    } else {
+      conditionInput.style.display = 'block';
+      conditionInput.required = true;
+    }
   } else {
     conditionGroup.style.display = 'none';
+    conditionInput.required = false;
   }
 
   // Payload
@@ -447,7 +458,11 @@ async function handleAddAction(e) {
     condition = null;
   } else if (eventType === 'SUB_GIFT') {
     const op = document.getElementById('action-condition-operator').value;
-    condition = op + condition;
+    if (op === 'ELSE_MULTIPLY') {
+      condition = op;
+    } else {
+      condition = op + condition;
+    }
   }
 
   let payload = {};

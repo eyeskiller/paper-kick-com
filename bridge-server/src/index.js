@@ -395,28 +395,54 @@ app.post('/api/webhooks/kick', async (req, res) => {
       if (dbServer.eventsEnabled) {
         const count = event.giftees ? event.giftees.length : 0;
         const rules = await prisma.actionRule.findMany({ where: { serverId: dbServer.id, eventType: 'SUB_GIFT' } });
+        
+        let exactMatchFound = false;
+
+        // Pass 1: Check for explicit == or >=
         for (const rule of rules) {
           let matches = false;
-          if (!rule.condition) {
-             matches = count >= 1;
-          } else if (rule.condition.startsWith('==')) {
+          if (rule.condition && rule.condition.startsWith('==')) {
              const val = parseInt(rule.condition.substring(2), 10);
              matches = count === val;
-          } else if (rule.condition.startsWith('>=')) {
+          } else if (rule.condition && rule.condition.startsWith('>=')) {
              const val = parseInt(rule.condition.substring(2), 10);
              matches = count >= val;
-          } else {
+          } else if (rule.condition && /^\d+$/.test(rule.condition)) {
              // Fallback for older data
              matches = count >= parseInt(rule.condition, 10);
           }
 
           if (matches) {
+            exactMatchFound = true;
             wsManager.routeToServer(dbServer.id, {
               type: 'execute_action',
               actionType: rule.actionType,
               sender: "Someone",
               payload: rule.payload
             });
+          }
+        }
+
+        // Pass 2: Else Multiply
+        if (!exactMatchFound && count > 0) {
+          for (const rule of rules) {
+            if (rule.condition === 'ELSE_MULTIPLY' || !rule.condition) {
+              let finalPayload = rule.payload;
+              try {
+                const parsed = JSON.parse(rule.payload);
+                if (parsed.amount) {
+                  parsed.amount = parsed.amount * count;
+                  finalPayload = JSON.stringify(parsed);
+                }
+              } catch (e) {}
+
+              wsManager.routeToServer(dbServer.id, {
+                type: 'execute_action',
+                actionType: rule.actionType,
+                sender: "Someone",
+                payload: finalPayload
+              });
+            }
           }
         }
       }
